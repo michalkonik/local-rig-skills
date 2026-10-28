@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+# Run a long command in the background so a tool call does not time out; poll it later.
+#   bg NAME COMMAND...      start (log: ~/.local/state/rig-skills/jobs/NAME.log)
+#   bg NAME                 status: running/finished, exit code, last 30 log lines
+# Example: bg bench-gemma python3 ~/Desktop/github_repos/local-rig-skills/bin/bench.py run gemma --label before
+set -u
+D=~/.local/state/rig-skills/jobs; mkdir -p "$D"
+name=${1:?usage: bg NAME [COMMAND...]}; shift
+log="$D/$name.log"; pidf="$D/$name.pid"; rcf="$D/$name.rc"
+if [ $# -gt 0 ]; then
+  if [ -f "$pidf" ] && kill -0 "$(cat "$pidf")" 2>/dev/null; then echo "job $name is already running (pid $(cat "$pidf"))"; exit 1; fi
+  rm -f "$rcf"; : > "$log"
+  nohup bash -c '"$@"; echo $? > "'"$rcf"'"' _ "$@" >> "$log" 2>&1 &
+  echo $! > "$pidf"
+  echo "started job $name (pid $!); check with: $0 $name"
+else
+  if [ -f "$pidf" ] && kill -0 "$(cat "$pidf")" 2>/dev/null; then echo "RUNNING (pid $(cat "$pidf"))";
+  elif [ -f "$rcf" ]; then echo "FINISHED, exit code $(cat "$rcf")";
+  else echo "NOT RUNNING (no exit code recorded)"; fi
+  tail -n 30 "$log" 2>/dev/null
+fi

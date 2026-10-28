@@ -1,0 +1,9 @@
+{
+  "name": "make-youtube-video-renderer",
+  "private": true,
+  "description": "Headless Chrome frame renderer for video.py (pinned; uses the system Chrome).",
+  "type": "module",
+  "dependencies": {
+    "playwright-core": "1.64.0-alpha-1790635538000"
+  }
+}

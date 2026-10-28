@@ -1,0 +1,131 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>
+:root{--bg:#0d1117;--fg:#e6edf3;--muted:#8b949e;--accent:#7cf29c;--panel:#161b22;--line:#30363d;--warn:#ffb86b;
+  --u:calc(min(100vw,100vh*16/9)/100)}
+.short{--u:calc(100vw/56)}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:100%;height:100%;background:var(--bg);color:var(--fg);overflow:hidden;
+  font-family:"Inter","Noto Sans","DejaVu Sans",sans-serif}
+#s{position:absolute;inset:0;padding:calc(var(--u)*5) calc(var(--u)*6);display:flex;flex-direction:column;gap:calc(var(--u)*2.2)}
+.short #s{padding:calc(var(--u)*7) calc(var(--u)*5) calc(var(--u)*30);justify-content:center}
+h1{font-size:calc(var(--u)*4.6);line-height:1.12;font-weight:800;letter-spacing:-.01em}
+em{font-style:normal;color:var(--accent)}
+.short h1{font-size:calc(var(--u)*6.2)}
+.short li{font-size:calc(var(--u)*4.4)}
+.short .big .n{font-size:calc(var(--u)*15)}
+.short .big .t{font-size:calc(var(--u)*4.6);max-width:100%}
+.short .row{font-size:calc(var(--u)*3.6)}
+.short .node{font-size:calc(var(--u)*3.8);max-width:none}
+.sub{font-size:calc(var(--u)*2.4);color:var(--muted)}
+.title,.bullets,.chart-s,.flow-s,.table,.big{justify-content:center}
+.title h1{font-size:calc(var(--u)*6.4)}
+.short .title h1,.short.title h1{font-size:calc(var(--u)*7)}
+ul{list-style:none;display:flex;flex-direction:column;gap:calc(var(--u)*1.6);margin-top:calc(var(--u)*1)}
+li{font-size:calc(var(--u)*3.3);line-height:1.3;display:flex;gap:calc(var(--u)*1.4);transition:none}
+li:before{content:"";flex:0 0 calc(var(--u)*1.1);height:calc(var(--u)*1.1);margin-top:calc(var(--u)*1.1);background:var(--accent);border-radius:2px}
+li.hide{visibility:hidden}
+li.dim{opacity:.45}
+.big{justify-content:center;align-items:flex-start}
+.big .n{font-size:calc(var(--u)*13);font-weight:900;color:var(--accent);line-height:1}
+.big .t{font-size:calc(var(--u)*3.4);max-width:85%;line-height:1.25}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:calc(var(--u)*1);flex:1;min-height:0;overflow:hidden;
+  font-family:"JetBrains Mono","DejaVu Sans Mono",monospace;font-size:calc(var(--u)*1.75);line-height:1.45;padding:calc(var(--u)*2)}
+.short .panel{font-size:calc(var(--u)*2.3)}
+.bar3{display:flex;gap:calc(var(--u)*.8);margin:calc(var(--u)*-.6) 0 calc(var(--u)*1.4)}
+.bar3 i{width:calc(var(--u)*1.1);height:calc(var(--u)*1.1);border-radius:50%;background:#ff5f56}
+.bar3 i:nth-child(2){background:#ffbd2e}.bar3 i:nth-child(3){background:#27c93f}
+.prompt{color:var(--accent)} .cur{display:inline-block;width:.6em;height:1.1em;background:var(--fg);vertical-align:text-bottom}
+pre{white-space:pre-wrap;word-break:break-word;font:inherit}
+.out{color:#c9d1d9}
+.ln{display:block;padding:0 calc(var(--u)*.6);border-left:3px solid transparent}
+.ln.hl{background:rgba(124,242,156,.12);border-left-color:var(--accent)}
+.ln.lo{opacity:.35}
+.k{color:#79c0ff}.s{color:#a5d6ff}.c{color:#8b949e;font-style:italic}.num{color:#ffa657}.kw{color:#ff7b72}
+.chart{display:flex;flex-direction:column;justify-content:center;gap:calc(var(--u)*1.8)}
+.row{display:grid;grid-template-columns:28% 1fr;align-items:center;gap:calc(var(--u)*1.5);font-size:calc(var(--u)*2.7)}
+.short .row{grid-template-columns:1fr;gap:calc(var(--u)*.6)}
+.track{height:calc(var(--u)*4);background:var(--panel);border-radius:calc(var(--u)*.6);position:relative}
+.fill{height:100%;border-radius:calc(var(--u)*.6);background:var(--muted);display:flex;align-items:center;justify-content:flex-end;
+  padding-right:calc(var(--u)*1.2);font-weight:800;color:#0d1117;min-width:calc(var(--u)*9)}
+.fill.best{background:var(--accent)}
+.row.hide{visibility:hidden}
+.unit{color:var(--muted);font-size:calc(var(--u)*1.8)}
+.flow{margin-top:calc(var(--u)*3);display:flex;align-items:center;justify-content:center;gap:calc(var(--u)*1.2);flex-wrap:wrap}
+.short .flow{flex-direction:column}
+.node{background:var(--panel);border:2px solid var(--line);border-radius:calc(var(--u)*1);padding:calc(var(--u)*2) calc(var(--u)*2.4);
+  font-size:calc(var(--u)*2.8);text-align:center;max-width:calc(var(--u)*24)}
+.node small{display:block;color:var(--muted);font-size:.7em;margin-top:.3em}
+.node.now{border-color:var(--accent);box-shadow:0 0 0 4px rgba(124,242,156,.15)}
+.arrow{color:var(--muted);font-size:calc(var(--u)*3)}
+.short .arrow{transform:rotate(90deg)}
+.hide{visibility:hidden}
+table{border-collapse:collapse;width:100%;font-size:calc(var(--u)*2.2)}
+td,th{padding:calc(var(--u)*1) calc(var(--u)*1.4);border-bottom:1px solid var(--line);text-align:left}
+th{color:var(--muted);font-weight:600}
+tr.hide{visibility:hidden}
+td.win{color:var(--accent);font-weight:700}
+.img{flex:1;min-height:0;display:flex;align-items:center;justify-content:center}
+.img img{max-width:100%;max-height:100%;border-radius:calc(var(--u)*.8);border:1px solid var(--line)}
+.cap{font-size:calc(var(--u)*2);color:var(--muted)}
+#brand{position:absolute;right:calc(var(--u)*2.4);bottom:calc(var(--u)*1.6);font-size:calc(var(--u)*1.4);color:var(--muted)}
+.short #brand{bottom:auto;top:calc(var(--u)*2.5)}
+#src{position:absolute;left:calc(var(--u)*6);bottom:calc(var(--u)*1.6);font-size:calc(var(--u)*1.3);color:var(--muted)}
+</style></head>
+<body><div id="s"></div><div id="src"></div><div id="brand"></div>
+<script>
+const esc=t=>String(t??"").replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
+// *word* in headings -> accent colour
+const hi=t=>esc(t).replace(/\*([^*]+)\*/g,"<em>$1</em>");
+function reveal(i,beats,n){ if(beats===n+1) return i; return Math.min(n,Math.ceil((i+1)*n/beats)); }
+function syntax(line,lang){
+  // one pass over the raw line: comment | string | key | keyword | number; everything else escaped as is
+  const kv=(lang==="yaml"||lang==="toml"||lang==="json");
+  const re=/(\s#.*$|^\s*#.*$|\/\/.*$)|("(?:[^"\\]|\\.)*"|'[^']*')|(^\s*-?\s*[\w.\-]+(?=\s*[:=]))|\b(def|class|import|from|return|if|else|for|in|while|async|await|const|let|function|true|false|null|None|True|False)\b|(\b-?\d+(?:\.\d+)?\b)/g;
+  let out="",last=0,m;
+  while((m=re.exec(line))){
+    out+=esc(line.slice(last,m.index));
+    const [t,c,str,key,kw,num]=m;
+    if(c) out+=`<span class="c">${esc(t)}</span>`;
+    else if(str) out+=`<span class="s">${esc(t)}</span>`;
+    else if(key) out+=kv?`<span class="k">${esc(t)}</span>`:esc(t);
+    else if(kw) out+=`<span class="kw">${esc(t)}</span>`;
+    else out+=`<span class="num">${esc(t)}</span>`;
+    last=m.index+t.length; if(!t.length) re.lastIndex++;
+  }
+  return out+esc(line.slice(last));
+}
+function inRanges(n,r){ return (r||[]).some(([a,b])=>n>=a&&n<=(b??a)); }
+window.show=function(sc,beat,o){
+  o=o||{}; const s=document.getElementById("s"); const B=(sc.say||[""]).length;
+  document.body.className=o.short?"short":"";
+  document.getElementById("brand").textContent=o.brand||"";
+  document.getElementById("src").textContent=sc.source?("source: "+sc.source):"";
+  s.className=sc.type+(sc.type==="chart"||sc.type==="flow"?" "+sc.type+"-s":""); let h="";
+  const H=sc.heading?`<h1>${hi(sc.heading)}</h1>`:"";
+  if(sc.type==="title"){ h=`<h1>${hi(sc.heading)}</h1>${sc.sub?`<div class="sub">${esc(sc.sub)}</div>`:""}`; }
+  else if(sc.type==="bullets"){ const n=sc.items.length, v=reveal(beat,B,n);
+    h=H+"<ul>"+sc.items.map((t,k)=>`<li class="${k>=v?"hide":(k<v-1&&sc.focus!==false?"dim":"")}">${hi(t)}</li>`).join("")+"</ul>"; }
+  else if(sc.type==="big"){ h=`<div class="n">${esc(sc.value)}</div><div class="t">${hi(sc.text||"")}</div>`; }
+  else if(sc.type==="terminal"){
+    const cmd=sc.cmd||"", out=(sc.output||"").replace(/\s+$/,"").split("\n");
+    const typed=o.typed??cmd.length; const done=typed>=cmd.length;
+    let nOut=0; if(done){ nOut = B===1? out.length : Math.ceil(out.length*Math.max(0,beat)/(B-1)); if(o.outAll) nOut=out.length; }
+    h=H+`<div class="panel"><div class="bar3"><i></i><i></i><i></i></div><pre><span class="prompt">$ </span>${esc(cmd.slice(0,typed))}${done&&nOut?"":'<span class="cur"></span>'}\n<span class="out">${esc(out.slice(Math.max(0,nOut-(o.maxLines||22)),nOut).join("\n"))}</span></pre></div>`; }
+  else if(sc.type==="code"){ const lines=(sc.code||"").replace(/\s+$/,"").split("\n"); const r=(sc.highlight||[])[beat];
+    const rr=r?[r]:null;
+    h=H+`<div class="panel"><pre>${lines.map((l,k)=>`<span class="ln ${rr?(inRanges(k+1,rr)?"hl":"lo"):""}">${syntax(l,sc.lang)||" "}</span>`).join("")}</pre></div>`; }
+  else if(sc.type==="chart"){ const n=sc.bars.length, v=reveal(beat,B,n); const max=Math.max(...sc.bars.map(b=>+b[1]));
+    const best=sc.lower_is_better?Math.min(...sc.bars.map(b=>+b[1])):max;
+    h=H+(sc.unit?`<div class="unit">${esc(sc.unit)}${sc.lower_is_better?" (lower is better)":""}</div>`:"")+`<div class="chart">`+sc.bars.map((b,k)=>
+      `<div class="row ${k>=v?"hide":""}"><div>${esc(b[0])}</div><div class="track"><div class="fill ${+b[1]===best?"best":""}" style="width:${Math.max(4,100*b[1]/max)}%">${esc(b[2]??b[1])}</div></div></div>`).join("")+"</div>"; }
+  else if(sc.type==="flow"){ const n=sc.nodes.length, v=reveal(beat,B,n);
+    h=H+`<div class="flow">`+sc.nodes.map((nd,k)=>{const [t,sub]=Array.isArray(nd)?nd:[nd,""];
+      return (k?`<div class="arrow ${k>=v?"hide":""}">→</div>`:"")+`<div class="node ${k>=v?"hide":""} ${k===v-1?"now":""}">${esc(t)}${sub?`<small>${esc(sub)}</small>`:""}</div>`}).join("")+"</div>"; }
+  else if(sc.type==="table"){ const rows=sc.rows||[], n=rows.length, v=reveal(beat,B,n);
+    h=H+`<table><tr>${(sc.columns||[]).map(c=>`<th>${esc(c)}</th>`).join("")}</tr>`+rows.map((r,k)=>`<tr class="${k>=v?"hide":""}">${r.map((c,j)=>`<td class="${(sc.win||[]).some(w=>w[0]===k&&w[1]===j)?"win":""}">${esc(c)}</td>`).join("")}</tr>`).join("")+"</table>"; }
+  else if(sc.type==="image"){ h=H+`<div class="img"><img src="${esc(o.imgUrl||"")}"></div>${sc.caption?`<div class="cap">${esc(sc.caption)}</div>`:""}`; }
+  s.innerHTML=h;
+  if(o.vars) for(const [k,v] of Object.entries(o.vars)) document.documentElement.style.setProperty(k,v);
+};
+</script></body></html>
