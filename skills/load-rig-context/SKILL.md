@@ -9,8 +9,8 @@ description: Use when you start work on this rig and need its map - limits, wher
    name, tool versions/logins, Bitwarden, the browser agent, an agent's details or the rig-tools MCP tool list.
 
 ## Rules
-1. RAM (60 GB usable) is the limit, not VRAM. One radiance model (qwen3.8-flash-next*) at a time: it pins ~30 GB;
-   a second model beside it caused a kernel panic. Check `rig_now.py`/`free -g` first (GTT counts).
+1. RAM (60 GB usable) is the limit, not VRAM. One radiance model (`qwen3.8-flash-next-uncensored`) at a time: it pins ~30 GB;
+   a second radiance model beside it caused a kernel panic. Check `rig_now.py`/`free -g` first (GTT counts).
    Free all: `curl -s localhost:8080/unload`. GPU 4 (iGPU) never goes in a device list.
 2. Never print, copy or commit secrets: `~/.secrets/`, `/etc/msmtprc`, `~/.config/rig-tools/token`,
    `~/.rig-agent-token`, `~/.cache/huggingface/token`, `HF_TOKEN` in `~/.bashrc`, `~/.openclaw/openclaw.json`,
@@ -46,13 +46,15 @@ rig-tools MCP, 8766 sudo approval | 8188 ComfyUI | 8001 Speaches | 18789 OpenCla
 8099 rig-agent | 8711 Deal Hunter web page (only while it runs)
 
 ## Models (ttl 600 s)
-`qwen3.8-flash-next` (smartest), `-uncensored`, `-llamacpp`; `qwen3.6-35b-a3b`, `-x4`; `gemma-4-26b-a4b`,
-`-pool` (4 slots); `bielik-11b` (Polish). Groups: `pedro` = uncensored + gemma pool; `duo` = qwen3.8-flash-next +
-qwen3.6-35b-a3b; a model outside the loaded group unloads it (maybe you). Engines: radiance (qwen3.8*), vLLM fork
-(qwen3.6*), llama.cpp ROCm `~/llama.cpp-e86f5fd`, `~/llama.cpp-0ce8cd1`, Vulkan `~/llama.cpp-0ce8cd1-vulkan`.
+`qwen3.8-flash-next-uncensored` (smartest; aliases: `qwen3.8-flash-next`, `qwen3.8`, `smartest` — censored Flash removed);
+`qwen3.6-35b-a3b` / `-x4` (Huihui abliterated FP8); `gemma-4-26b-a4b`, `-pool` (4 slots); `bielik-11b` (Polish).
+Flint removed (never cleared ≥100 t/s). Groups: `pedro` = flash-unc (GPUs 0+1) + gemma-pool (2+3);
+`duo` = qwen3.6 only (llama-swap: one model, one group). Engines: radiance (flash-unc), vLLM fork (qwen3.6*),
+llama.cpp ROCm `~/llama.cpp-e86f5fd`, Vulkan `~/llama.cpp-e86f5fd-vulkan` / `~/llama.cpp-0ce8cd1-vulkan`.
 Status: `gpu-status`, `models-status`, `amd-smi metric -m`, `curl -s localhost:8080/logs`.
 OpenClaw: agent `miclaw` = Pedro, always `timeout 60 openclaw ...`; changes via /update-openclaw-config.
 Long jobs: `$R/local-rig-skills/bin/bg NAME cmd...`, poll `bg NAME`. Prefer the rig skills to improvising.
+Avoid description-only `ls_entry` patches while models are loaded — reload unloads them.
 
 ## Agents (they propose and report; money decisions stay with the user)
 - Crypto agent, `$R/crypto-agent`: user svc `cryptoagent`, enabled, 24/7, **paper only (live stays disabled)**;
