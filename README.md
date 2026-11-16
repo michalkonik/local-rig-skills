@@ -49,6 +49,16 @@ them, in both chat UIs, and so does the OpenClaw agent Pedro. *Polska wersja: [R
 | `/income-ledger` | the shared income ledger (SQLite): attempts, hours, costs, revenue, kill-check |
 | `/income-weekly-review` | weekly page from the ledger: numbers per stream, keep/kill verdicts per the course's criteria, upcoming deadlines, your decisions |
 | `/deal-hunter <status, deals, show, explain, books, start, stop>` | query and control the Deal Hunter agent (undervalued-hardware deals, tiers, net breakdown, costs); it only finds deals, never buys or contacts sellers |
+
+**Notes (OneNote via Microsoft Graph)**
+
+| Skill | What it does |
+|---|---|
+| `/onenote-list` | notebook → section group → section tree, or the pages in one section |
+| `/onenote-read` | search pages and print one page as text |
+| `/onenote-write` | create a page or append text; sends only with `--apply` |
+
+The script is `bin/onenote.py`. It reads Bitwarden item `onenote`, field `access_token` (`bw-secret onenote#access_token`). The token needs Graph scope `Notes.ReadWrite`.
 Full generated list: [INDEX.md](INDEX.md).
 
 ## How the models get the skills
