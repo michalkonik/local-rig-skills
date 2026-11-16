@@ -71,3 +71,4 @@ models, machine changes, monitoring, OpenClaw, web search, YouTube/X content, si
 | Deal Hunter | `13-DEAL-HUNTER.md`, `$R/deal-hunter/README.md` + `docs/` |
 | crypto agent | `$R/crypto-agent/README.md` + `docs/` (no chapter in the rig docs yet) |
 | private courses (EN + PL) | `../private-courses/` (contract to company, X/YouTube growth, AI second-order winners, biotech in the age of AI) |
+| OneNote / OneDrive | Graph token in Bitwarden `onenote#access_token` (scopes `Notes.ReadWrite`, `Files.ReadWrite`). Skills `/onenote-list`, `/onenote-read`, `/onenote-write`, `/drive-list`, `/drive-read`, `/drive-write`. Do not print the token. |

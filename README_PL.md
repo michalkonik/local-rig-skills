@@ -59,6 +59,16 @@ każdy model serwowany przez llama-swap, w obu interfejsach czatu, a także agen
 | `/onenote-write` | nowa strona albo dopisek; wysyła tylko z `--apply` |
 
 Skrypt to `bin/onenote.py`. Czyta pole `access_token` z pozycji Bitwarden `onenote` (`bw-secret onenote#access_token`). Token musi mieć zakres Graph `Notes.ReadWrite`.
+
+**OneDrive (ten sam token Graph, zakres `Files.ReadWrite`)**
+
+| Skill | Co robi |
+|---|---|
+| `/drive-list` | lista jednego folderu albo szukanie na dysku |
+| `/drive-read` | treść małego pliku tekstowego, albo sam rozmiar gdy to nie tekst |
+| `/drive-write` | wysyłka, nowy folder albo usunięcie jednej rzeczy; wysyła tylko z `--apply` |
+
+Skrypt: `bin/drive.py`. To samo pole Bitwarden. Token skopiowany przed zgodą nie otworzy dysku.
 Pełna, generowana lista: [INDEX.md](INDEX.md).
 
 ## Jak modele dostają skille

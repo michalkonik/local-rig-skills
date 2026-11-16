@@ -59,6 +59,16 @@ them, in both chat UIs, and so does the OpenClaw agent Pedro. *Polska wersja: [R
 | `/onenote-write` | create a page or append text; sends only with `--apply` |
 
 The script is `bin/onenote.py`. It reads Bitwarden item `onenote`, field `access_token` (`bw-secret onenote#access_token`). The token needs Graph scope `Notes.ReadWrite`.
+
+**OneDrive (same Graph token, scope `Files.ReadWrite`)**
+
+| Skill | What it does |
+|---|---|
+| `/drive-list` | list one folder or search the drive |
+| `/drive-read` | print a small text file, or the size when it is not text |
+| `/drive-write` | upload, create a folder, or delete one item; sends only with `--apply` |
+
+Script: `bin/drive.py`. Same Bitwarden field. A token copied before consent cannot call the drive.
 Full generated list: [INDEX.md](INDEX.md).
 
 ## How the models get the skills
