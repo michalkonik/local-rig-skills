@@ -32,7 +32,9 @@ them, in both chat UIs, and so does the OpenClaw agent Pedro. *Polska wersja: [R
 |---|---|
 | `/content-voice` | builds your voice profile from your own writing (measured numbers + quoted examples); drafts are checked against it |
 | `/content-ideas` | ideas from your rig's real activity + niche trends (HF trending, r/LocalLLaMA, HN, llama.cpp releases), scored, each with the command that proves it |
-| `/write-x-post <idea or URL>` | X post / thread / reply in your voice with real numbers, checked for length and AI tells; you post it by hand |
+| `/write-x-post <idea or URL>` | one English X draft from a content idea, in your voice, with real numbers; you post it by hand. Not the two-account day loop |
+| `/x-operate` | two X accounts: morning brief, audit, who to talk to, follow or unfollow, and drafts. You post by hand |
+| `/x-voice` | rewrite a draft so it sounds like you: English on @local_agents, Polish on @youroldpalhorse |
 | `/make-youtube-video <idea>` | real terminal captures -> narrated slides, charts, code (local Kokoro TTS), captions, chapters, thumbnail A/B, titles - all on the rig |
 | `/make-youtube-short <finding>` | 30-55 s vertical video with burned captions from one real result |
 | `/publish-youtube-video <slug>` | upload via the YouTube Data API as private/scheduled with thumbnail, captions, AI-disclosure flag |
