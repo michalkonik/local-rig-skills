@@ -19,7 +19,7 @@ description: Use when you start work on this rig and need its map - limits, wher
    Delete with `gio trash PATH` (in /tmp: `rm -f FILE`). Third-party code (pip/npm, plugins, `curl | sh`,
    unknown models): the user's OK first.
 4. Back up a config before editing, verify after, journal it with its undo.
-5. Git: branch + PR, never push to main; no AI attribution in michal-koniu repos; public repos stay generic.
+5. Git: branch + PR, never push to main; no AI attribution in michalkonik repos; public repos stay generic.
 6. Two autonomous agents share the GPUs (see Agents; `rig_now.py` prints whether they run). Deal Hunter uses group
    `pedro`, the crypto agent `duo`: loading a model outside the loaded group evicts the other agent's models. Never
    unload, stop, restart or reconfigure an agent unless the user asks. Never touch an agent's `frozen/` layer.
@@ -32,10 +32,9 @@ amd-smi = HIP order; GPU 0 drives the monitor), GPU 4 = 2 GB iGPU. `~/models` (1
 - `$R/llm-private-education`: rig docs `en/`, `pl/`, `configs/`, `tools/snapshot-configs.py`, `private-courses/`
 - `$R/local-rig-skills`: `skills/` (catalog `INDEX.md`), `bin/` (bg, ls_entry, smoke, bench, model_report,
   model_facts, sync_skills), `lib/rig.py`, `reference/`
-- `$R/crypto-agent`, `$R/deal-hunter` (private): the two agents; `$R/deal-hunter-dev` = second checkout of deal-hunter
-- Public, generic (no rig internals): `$R/llm-education` (courses), `$R/local-browser-agent`,
-  `$R/local-llm-perf-bench`, `local-llm-quality-bench`, `local-llm-bench-results`, `radeon-r9700-rocm-notes`;
-  `$R/family-finance-planner` is an unrelated personal app
+- `$R/autonomous-crypto-agent` (private, GitHub) and `$R/autonomous-deal-hunter` (local only). No deal-hunter-dev checkout.
+- Generic, no rig internals. Private: `$R/llm-education`, `$R/local-browser-agent`, `local-llm-quality-bench`,
+  `local-llm-bench-results`, `radeon-r9700-rocm-notes`. Public: `$R/local-llm-perf-bench`, `$R/family-finance-planner` (other app).
 - `~/.config/llama-swap/`: `config.yaml` (watched), `vllm/`, `radiance/`, `tools/sync_prompts.py`, `AGENT_BOOTSTRAP.md`
 - `~/.openclaw/`: `openclaw.json` (secrets), `workspace/` (Pedro), `patches/`
 - `~/.local/state/rig-skills/`: `journal.log`, `backups/`, `bench/`, `jobs/`
@@ -57,11 +56,11 @@ Long jobs: `$R/local-rig-skills/bin/bg NAME cmd...`, poll `bg NAME`. Prefer the 
 Avoid description-only `ls_entry` patches while models are loaded — reload unloads them.
 
 ## Agents (they propose and report; money decisions stay with the user)
-- Crypto agent, `$R/crypto-agent`: user svc `cryptoagent`, enabled, 24/7, **paper only (live stays disabled)**;
+- Crypto agent, `$R/autonomous-crypto-agent`: user svc `cryptoagent`, enabled, 24/7, **paper only (live stays disabled)**;
   grows a portfolio measured in BTC, trades every allowlisted asset. Status `.venv/bin/cryptoagent status`;
   docs `README.md`, `docs/OPERATIONS.md`. Limits, allowlists, policy engine and signer (`frozen/`) change only
   through the user.
-- Deal Hunter, `$R/deal-hunter`: started and stopped by hand (`dh start` / `dh status` / `dh stop`, venv
+- Deal Hunter, `$R/autonomous-deal-hunter`: started and stopped by hand (`dh start` / `dh status` / `dh stop`, venv
   `.venv/bin`; transient user unit `deal-hunter`, no autostart). Never buys or contacts sellers. Pedro queries it
   via /deal-hunter; doc `13-DEAL-HUNTER.md`.
 

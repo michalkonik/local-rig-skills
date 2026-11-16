@@ -1,6 +1,6 @@
 ---
 name: write-x-post
-description: Use when the user wants an X (Twitter) post, thread or reply drafted - "write a post about", "thread on my benchmark", "reply to this tweet". Drafts in the user's voice with real rig numbers into a queue the user posts by hand. Input - idea id, topic or post URL.
+description: Use when the user wants one English X draft from a content idea, into ~/content/x/queue. Not the two-account daily operator - use /x-operate. Input - idea id, topic or post URL.
 ---
 # /write-x-post
 **Goal:** a draft that reads like the user on a good day: specific, opinionated, with a real number.
@@ -12,6 +12,7 @@ description: Use when the user wants an X (Twitter) post, thread or reply drafte
 2. Numbers come from the rig: run the command or read the file named in the idea's evidence. Never estimate a number.
 3. The user posts and replies by hand. X removes accounts that post or reply through bots or browser automation.
 4. One idea per post. The first line carries the result or the tension, not a teaser.
+5. The two-account day loop is /x-operate. This skill does not pick the account or the day's replies.
 
 ## Steps
 1. Get the facts: `python3 ~/Desktop/github_repos/local-rig-skills/skills/content-ideas/scripts/ideas.py show <id>`

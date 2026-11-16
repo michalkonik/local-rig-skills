@@ -32,7 +32,9 @@ każdy model serwowany przez llama-swap, w obu interfejsach czatu, a także agen
 |---|---|
 | `/content-voice` | buduje profil Twojego stylu z Twoich własnych tekstów (zmierzone liczby + cytowane przykłady); szkice są z nim porównywane |
 | `/content-ideas` | pomysły z prawdziwej aktywności riga + trendy w niszy (HF trending, r/LocalLLaMA, HN, wydania llama.cpp), z oceną i poleceniem, które je udowadnia |
-| `/write-x-post <pomysł albo URL>` | post / wątek / odpowiedź na X Twoim stylem, z prawdziwymi liczbami, sprawdzone pod długość i ślady AI; publikujesz ręcznie |
+| `/write-x-post <pomysł albo URL>` | jeden angielski szkic na X z pomysłu treści, Twoim stylem i z prawdziwymi liczbami; publikujesz ręcznie. To nie jest pętla dwóch kont |
+| `/x-operate` | dwa konta X: poranny brief, audyt, z kim gadać, kogo obserwować albo odobserwować, szkice. Publikujesz ręcznie |
+| `/x-voice` | przepisuje szkic tak, żeby brzmiał jak Ty: angielski na @local_agents, polski na @youroldpalhorse |
 | `/make-youtube-video <pomysł>` | prawdziwe nagrania terminala -> slajdy, wykresy, kod z narracją (lokalny Kokoro), napisy, rozdziały, miniatury A/B, tytuły - wszystko na rigu |
 | `/make-youtube-short <wynik>` | pionowy film 30-55 s z wtopionymi napisami, z jednego prawdziwego wyniku |
 | `/publish-youtube-video <slug>` | wysyłka przez YouTube Data API jako prywatny/zaplanowany, z miniaturą, napisami i flagą treści syntetycznych |
