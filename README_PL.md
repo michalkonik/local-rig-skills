@@ -49,6 +49,16 @@ każdy model serwowany przez llama-swap, w obu interfejsach czatu, a także agen
 | `/income-ledger` | wspólny dziennik przychodów (SQLite): próby, godziny, koszty, przychód, kill-check |
 | `/income-weekly-review` | tygodniowa strona z dziennika: liczby na strumień, werdykty zostaw/porzuć według kryteriów z kursu, nadchodzące terminy, Twoje decyzje |
 | `/deal-hunter <status, deals, show, explain, books, start, stop>` | pytanie i sterowanie agentem Deal Hunter (okazje na sprzęt, progi, rozbicie zysku netto, koszty); tylko znajduje okazje, nigdy nie kupuje ani nie pisze do sprzedawców |
+
+**Notatki (OneNote przez Microsoft Graph)**
+
+| Skill | Co robi |
+|---|---|
+| `/onenote-list` | drzewo notatnik → grupa sekcji → sekcja, albo strony jednej sekcji |
+| `/onenote-read` | szuka stron i wypisuje treść jednej |
+| `/onenote-write` | nowa strona albo dopisek; wysyła tylko z `--apply` |
+
+Skrypt to `bin/onenote.py`. Czyta pole `access_token` z pozycji Bitwarden `onenote` (`bw-secret onenote#access_token`). Token musi mieć zakres Graph `Notes.ReadWrite`.
 Pełna, generowana lista: [INDEX.md](INDEX.md).
 
 ## Jak modele dostają skille
