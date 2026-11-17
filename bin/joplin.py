@@ -204,13 +204,12 @@ def cell(text):
 
 def action_body(category, description, deadline, calendar, reminder, agent_note=""):
     color, label = CATEGORIES[category]
-    # Markdown table. A raw HTML note shows the tags in the editor and a warning
-    # banner in the viewer. The category color is the only HTML span.
+    # Markdown only. Joplin shows raw HTML inside a table cell, including on the Mac.
     shown_deadline = deadline.strip()
     if shown_deadline.casefold() in {"overdue", "now"}:
         shown_deadline = f"**{shown_deadline}**"
     rows = [
-        ("Category", f'<span style="color:{color}"><b>{label}</b></span>'),
+        ("Category", f"**{label}**"),
         ("Description", cell(description)),
         ("Deadline", cell(shown_deadline)),
         ("Google Calendar", cell(calendar)),
@@ -296,9 +295,6 @@ UNDATED_RANK = {
     "Check the Atlassian MCP in Ledger": 120,
 }
 CATEGORY_RANK = {"admin": 200, "company": 210, "money": 220, "work": 230}
-LABEL_COLOR = {label: color for color, label in CATEGORIES.values()}
-
-
 def table_rows(body):
     rows = []
     for line in body.splitlines():
@@ -341,7 +337,7 @@ def sort_key(title, deadline, category):
 
 
 def category_of(value):
-    text = re.sub(r"<[^>]+>", "", value)
+    text = re.sub(r"<[^>]+>", "", value).replace("**", "")
     for key, (color, label) in CATEGORIES.items():
         if label.casefold() == text.strip().casefold():
             return key, color, label
@@ -349,8 +345,7 @@ def category_of(value):
 
 
 def task_cell(title, nid, label):
-    color = LABEL_COLOR.get(label, "#027a48")
-    return f'<span style="color:{color}">[{cell(title)}](:/{nid})</span>'
+    return f"**{label}** [{cell(title)}](:/{nid})"
 
 
 def arrange_actions():
