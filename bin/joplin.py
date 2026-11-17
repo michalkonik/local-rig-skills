@@ -202,7 +202,7 @@ def cell(text):
     return text.replace("|", "\\|").replace("\n", " ").strip()
 
 
-def action_body(category, description, deadline, calendar, reminder):
+def action_body(category, description, deadline, calendar, reminder, agent_note=""):
     color, label = CATEGORIES[category]
     # Markdown table. A raw HTML note shows the tags in the editor and a warning
     # banner in the viewer. The category color is the only HTML span.
@@ -215,6 +215,7 @@ def action_body(category, description, deadline, calendar, reminder):
         ("Deadline", cell(shown_deadline)),
         ("Google Calendar", cell(calendar)),
         ("Reminder", cell(reminder)),
+        ("Note for agent", cell(agent_note)),
     ]
     lines = ["| Field | Value |", "| --- | --- |"]
     for name, value in rows:
@@ -239,7 +240,7 @@ def cmd_todo(args):
         say("ERROR calendar Yes must name the calendar, for example 'Yes: primary (michal.konik.praca@gmail.com)'", 2)
     if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", deadline) and deadline.casefold() not in {"now", "overdue", "not set"} and not deadline.casefold().startswith("before "):
         say("ERROR --deadline must be YYYY-MM-DD, now, overdue, not set, or 'before ...'", 2)
-    body = action_body(category, description, deadline, calendar, reminder)
+    body = action_body(category, description, deadline, calendar, reminder, args.agent_note or "")
     print(f"PLAN todo {title} category {category} deadline {deadline} calendar {calendar} reminder {reminder}")
     if not args.apply:
         say("OK not sent. Re-run the same command with --apply to create the to-do.", 10)
@@ -251,6 +252,7 @@ def cmd_todo(args):
     stamp = due_ms(deadline)
     if stamp:
         joplin("set", title, "todo_due", str(stamp))
+    arrange_actions()
     sync()
     print(f"OK todo {title}")
 
@@ -276,6 +278,264 @@ def cmd_append(args):
     joplin("set", args.note, "body", body + text)
     sync()
     print(f"OK appended {args.note}")
+
+
+# Lower rank is more important. Dated items always sort above these.
+UNDATED_RANK = {
+    "Get the missing wedding papers": 10,
+    "Apply for the ID card online": 20,
+    "Follow up on the blood tests": 30,
+    "Get the Generali refund": 40,
+    "Submit the RARR incubation application": 50,
+    "Confirm the year on the Asia quotes": 60,
+    "Finish the budget": 70,
+    "Set the date to leave the second job": 80,
+    "Open N26, check Lloyds, close Nest and Millennium": 90,
+    "Write the recession plan": 100,
+    "Send the old laptop to Warsaw": 110,
+    "Check the Atlassian MCP in Ledger": 120,
+}
+CATEGORY_RANK = {"admin": 200, "company": 210, "money": 220, "work": 230}
+LABEL_COLOR = {label: color for color, label in CATEGORIES.values()}
+
+
+def table_rows(body):
+    rows = []
+    for line in body.splitlines():
+        if not line.startswith("|"):
+            continue
+        cells = [part.strip() for part in line.strip().strip("|").split("|")]
+        if not cells or cells[0] in {"Field", "Task", "Completed"} or set(cells[0]) <= set("-: "):
+            continue
+        rows.append(cells)
+    return rows
+
+
+def field_map(body):
+    found = {}
+    for cells in table_rows(body):
+        if len(cells) >= 2:
+            found[cells[0]] = cells[1]
+        if cells[0] == "Note for agent" and len(cells) >= 3 and cells[2].strip():
+            found["Note for agent"] = cells[2]
+    return found
+
+
+def plain_deadline(text):
+    return text.replace("**", "").strip()
+
+
+def sort_key(title, deadline, category):
+    low = plain_deadline(deadline).casefold()
+    if low == "overdue":
+        return (0, "", 0, title)
+    if low == "now":
+        return (1, "", 0, title)
+    if low.startswith("before"):
+        return (2, "", 0, title)
+    if re.fullmatch(r"\d{4}-\d{2}-\d{2}", low):
+        pay_first = 0 if title.casefold().startswith("pay ") else 1
+        return (3, low, pay_first, title)
+    rank = UNDATED_RANK.get(title, CATEGORY_RANK.get(category, 500))
+    return (4, "", rank, title)
+
+
+def category_of(value):
+    text = re.sub(r"<[^>]+>", "", value)
+    for key, (color, label) in CATEGORIES.items():
+        if label.casefold() == text.strip().casefold():
+            return key, color, label
+    return "admin", CATEGORIES["admin"][0], text.strip() or "Admin and health"
+
+
+def task_cell(title, nid, label):
+    color = LABEL_COLOR.get(label, "#027a48")
+    return f'<span style="color:{color}">[{cell(title)}](:/{nid})</span>'
+
+
+def arrange_actions():
+    """Sort open to-dos, keep the agent-note row, and file completed ones."""
+    db = PROFILE / "database.sqlite"
+    con = sqlite3.connect(db)
+    con.row_factory = sqlite3.Row
+    folder = con.execute("select id from folders where title='Actions' and ifnull(deleted_time,0)=0").fetchone()
+    if folder is None:
+        con.close()
+        say("ERROR notebook Actions is missing")
+    notes = con.execute(
+        "select id, title, body, is_todo, todo_completed, todo_due from notes "
+        "where parent_id=? and ifnull(deleted_time,0)=0",
+        (folder["id"],),
+    ).fetchall()
+    open_items = []
+    done_items = []
+    index = None
+    completed_note = None
+    for note in notes:
+        if note["is_todo"]:
+            (done_items if note["todo_completed"] else open_items).append(note)
+        elif note["title"] == "Actions":
+            index = note
+        elif note["title"] == "Completed Actions":
+            completed_note = note
+    ranked = []
+    for note in open_items:
+        fields = field_map(note["body"] or "")
+        deadline = plain_deadline(fields.get("Deadline", "not set"))
+        category, color, label = category_of(fields.get("Category", ""))
+        agent = fields.get("Note for agent", "").strip()
+        ranked.append((sort_key(note["title"], deadline, category), note, fields, deadline, label, color, agent))
+    ranked.sort(key=lambda item: item[0])
+    now = int(datetime.now(ZoneInfo("Europe/Warsaw")).timestamp() * 1000)
+    for position, item in enumerate(ranked, start=1):
+        _key, note, fields, deadline, label, color, agent = item
+        description = fields.get("Description", "").strip()
+        calendar = fields.get("Calendar", fields.get("Google Calendar", "No")).strip() or "No"
+        reminder = fields.get("Reminder", "Not set").strip() or "Not set"
+        category, _color, _label = category_of(fields.get("Category", label))
+        body = action_body(category, description or note["title"], deadline or "not set", calendar, reminder, agent) + "\n"
+        con.execute(
+            "update notes set body=?, \"order\"=?, updated_time=?, user_updated_time=? where id=?",
+            (body, position * 1000, now, now, note["id"]),
+        )
+    # Completed page. Newest finished item first. The to-do itself is removed below.
+    old_rows = []
+    if completed_note is not None:
+        for cells in table_rows(completed_note["body"] or ""):
+            if len(cells) >= 6:
+                old_rows.append(cells)
+    fresh = []
+    known = {cells[1] for cells in old_rows}
+    for note in sorted(done_items, key=lambda item: item["todo_completed"], reverse=True):
+        if note["title"] in known:
+            continue
+        fields = field_map(note["body"] or "")
+        when = datetime.fromtimestamp(note["todo_completed"] / 1000, ZoneInfo("Europe/Warsaw")).strftime("%Y-%m-%d %H:%M")
+        fresh.append([
+            when,
+            cell(note["title"]),
+            cell(fields.get("Description", "").strip() or note["title"]),
+            cell(plain_deadline(fields.get("Deadline", "not set")) or "not set"),
+            cell(fields.get("Google Calendar", "No").strip() or "No"),
+            cell(fields.get("Reminder", "Not set").strip() or "Not set"),
+            cell(fields.get("Note for agent", "").strip()),
+        ])
+    completed_lines = [
+        "Finished work stays here with the description, so it is still clear later. The to-do is removed. Write a note for the agent in the last column.",
+        "",
+        "| Completed | Task | Description | Deadline | Calendar | Reminder | Note for agent |",
+        "| --- | --- | --- | --- | --- | --- | --- |",
+    ]
+    for cells in fresh + old_rows:
+        completed_lines.append("| " + " | ".join(cells[:7]) + " |")
+    completed_body = "\n".join(completed_lines) + "\n"
+    if completed_note is None:
+        con.commit()
+        con.close()
+        joplin("use", "Actions")
+        joplin("mknote", "Completed Actions")
+        con = sqlite3.connect(db)
+        completed_note = con.execute(
+            "select id from notes where title='Completed Actions' and parent_id=? and ifnull(deleted_time,0)=0",
+            (folder["id"],),
+        ).fetchone()
+        if completed_note is None:
+            con.close()
+            say("ERROR Completed Actions was not created")
+        completed_id = completed_note[0]
+    else:
+        completed_id = completed_note["id"]
+    con.execute(
+        "update notes set body=?, updated_time=?, user_updated_time=? where id=?",
+        (completed_body, now, now, completed_id),
+    )
+    # Actions index, same order as the to-do list.
+    today = datetime.now(ZoneInfo("Europe/Warsaw")).strftime("%-d %b %Y")
+    index_lines = [
+        "Only things to do. Soonest deadline at the top. Items with no deadline follow, most important first.",
+        "",
+        "Write a note for the agent on the to-do, in the row Note for agent. It is copied into the right-hand column here. On a finished item, write it in Completed Actions. A note is read and acted on.",
+        "",
+        f"Checked {today} against primary (`michal.konik.praca@gmail.com`), Choroby i Leki, Y, and Yana-and-Michal. None of these open tasks is on a calendar. The primary calendar has no default reminders, so a reminder is not set.",
+        "",
+        "Related, and not copied here: Spotkanie z ksi\u0119gow\u0105 mentzen, 26 Nov 2026 15:00, primary calendar. Its reminder is off.",
+        "",
+        "| Task | Deadline | Calendar | Reminder | Note for agent |",
+        "| --- | --- | --- | --- | --- |",
+    ]
+    # Re-read bodies we just wrote so the index matches.
+    for position, item in enumerate(ranked, start=1):
+        _key, note, fields, deadline, label, color, agent = item
+        calendar = fields.get("Google Calendar", "No").strip() or "No"
+        reminder = fields.get("Reminder", "Not set").strip() or "Not set"
+        index_lines.append(
+            f"| {task_cell(note['title'], note['id'], label)} | {cell(deadline or 'not set')} | {cell(calendar)} | {cell(reminder)} | {cell(agent)} |"
+        )
+    if index is not None:
+        con.execute(
+            "update notes set body=?, \"order\"=?, updated_time=?, user_updated_time=? where id=?",
+            ("\n".join(index_lines) + "\n", 0, now, now, index["id"]),
+        )
+    con.commit()
+    con.close()
+    removed = []
+    for note in done_items:
+        joplin("rmnote", "-f", note["id"])
+        removed.append(note["title"])
+    # Custom order, soonest at the top. The desktop may keep its own copy until it restarts.
+    settings = pathlib.Path.home() / ".config/joplin-desktop/settings.json"
+    if settings.is_file():
+        data = json.loads(settings.read_text())
+        data["notes.sortOrder.field"] = "order"
+        data["notes.sortOrder.reverse"] = False
+        settings.write_text(json.dumps(data) + "\n")
+    print(f"ORDER open {len(ranked)} moved {len(removed)}")
+    for position, item in enumerate(ranked, start=1):
+        _key, note, _fields, deadline, _label, _color, agent = item
+        suffix = f" | agent: {agent}" if agent else ""
+        print(f"{position}. {deadline or 'not set'} | {note['title']}{suffix}")
+    for note in done_items:
+        fields = field_map(note["body"] or "")
+        agent = fields.get("Note for agent", "").strip()
+        if agent:
+            print(f"AGENT completed | {note['title']} | {agent}")
+    if removed:
+        print("MOVED " + " | ".join(removed))
+    return ranked
+
+
+def cmd_complete(args):
+    title = args.title.strip()
+    if not title:
+        say("ERROR --title required", 2)
+    print(f"PLAN complete {title}")
+    if not args.apply:
+        say("OK not sent. Re-run the same command with --apply to complete the to-do.", 10)
+    sync()
+    db = PROFILE / "database.sqlite"
+    con = sqlite3.connect(db)
+    row = con.execute(
+        "select n.id from notes n join folders f on f.id=n.parent_id "
+        "where f.title=? and n.title=? and n.is_todo=1 and ifnull(n.deleted_time,0)=0 and ifnull(n.todo_completed,0)=0",
+        (args.notebook, title),
+    ).fetchone()
+    con.close()
+    if row is None:
+        say(f"ERROR open to-do not found in {args.notebook}: {title}")
+    joplin("set", row[0], "todo_completed", str(int(datetime.now(ZoneInfo("Europe/Warsaw")).timestamp() * 1000)))
+    arrange_actions()
+    sync()
+    print(f"OK complete {title}")
+
+
+def cmd_prepare(args):
+    print("PLAN prepare actions")
+    if not args.apply:
+        say("OK not sent. Re-run the same command with --apply to sort and file completed to-dos.", 10)
+    sync()
+    arrange_actions()
+    sync()
+    print("OK prepare")
 
 
 def build():
@@ -322,6 +582,13 @@ def build():
     a.add_argument("--reminder", required=True)
     a.add_argument("--text")
     a.add_argument("--file")
+    a.add_argument("--agent-note", default="")
+    a.add_argument("--apply", action="store_true")
+    a = add("complete", cmd_complete)
+    a.add_argument("--title", required=True)
+    a.add_argument("--notebook", default="Actions")
+    a.add_argument("--apply", action="store_true")
+    a = add("prepare", cmd_prepare)
     a.add_argument("--apply", action="store_true")
     return p
 

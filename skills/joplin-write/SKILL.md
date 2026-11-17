@@ -12,7 +12,7 @@ description: Use when the user wants a Joplin notebook or note created, or text 
 2. Add `--apply` only when the user asked to save, create, or append. A preview stays without it.
 3. Put the note body in `--text` or `--file`. Do not pass a token or password as the body.
 4. Append needs an existing note in that notebook. Do not create a second note to add a paragraph.
-5. An action item with a deadline goes to `/joplin-actions`, not this skill. This skill is for notes.
+5. An action item goes to `/joplin-actions`, not this skill. Do not complete a to-do by appending to a note.
 
 ## Steps
 1. If the notebook name is unknown, run `/joplin-list` and use the printed title.

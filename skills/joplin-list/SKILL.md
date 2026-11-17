@@ -26,7 +26,7 @@ For one notebook, say `Notes in <notebook>: <count>` and list `- title | id`.
 
 ## Gotchas
 - Titles are only unique inside one notebook. The same title can exist in two notebooks.
-- To-dos in Actions are listed by `notes "Actions"`. Open one with `/joplin-read`.
+- To-dos in Actions are listed by `notes "Actions"`. The script `prepare` prints them soonest deadline first. Open one with `/joplin-read`. Completed Actions is a note, not a to-do.
 - The script syncs before it lists. A note created on the Mac can take one sync cycle to appear.
 
 ## Before you finish
