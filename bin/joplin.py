@@ -281,18 +281,15 @@ def cmd_append(args):
 
 # Lower rank is more important. Dated items always sort above these.
 UNDATED_RANK = {
-    "Get the missing wedding papers": 10,
+    "Cut out a weird guz on my head": 5,
     "Apply for the ID card online": 20,
-    "Follow up on the blood tests": 30,
     "Get the Generali refund": 40,
-    "Submit the RARR incubation application": 50,
     "Confirm the year on the Asia quotes": 60,
-    "Finish the budget": 70,
-    "Set the date to leave the second job": 80,
-    "Open N26, check Lloyds, close Nest and Millennium": 90,
+    "Create and maintain the budget": 70,
+    "Open N26, check Lloyds, close Nest": 90,
     "Write the recession plan": 100,
     "Send the old laptop to Warsaw": 110,
-    "Check the Atlassian MCP in Ledger": 120,
+    "Use the Revolut Rev points for an Allegro card": 115,
 }
 CATEGORY_RANK = {"admin": 200, "company": 210, "money": 220, "work": 230}
 def table_rows(body):
