@@ -5,7 +5,7 @@ Never print sync passwords. Writes do nothing unless --apply is set.
 Note titles are resolved only inside the current notebook. The CLI has no search
 command; `search` reads the local database after one sync.
 """
-import argparse, fcntl, html, json, os, pathlib, re, sqlite3, subprocess, sys
+import argparse, fcntl, json, os, pathlib, re, sqlite3, subprocess, sys
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
@@ -198,49 +198,29 @@ def due_ms(deadline):
     return 0
 
 
-def deadline_html(deadline):
-    text = deadline.strip()
-    low = text.casefold()
-    if low == "overdue" or low == "now":
-        color = "#b42318" if low == "overdue" else "#b54708"
-        return f'<span style="color:{color}"><b>{html.escape(text)}</b></span>'
-    if due_ms(text):
-        return html.escape(text)
-    return f'<span style="color:#667085">{html.escape(text)}</span>'
+def cell(text):
+    return text.replace("|", "\\|").replace("\n", " ").strip()
 
 
 def action_body(category, description, deadline, calendar, reminder):
     color, label = CATEGORIES[category]
-    # Keep markdown links. Escape everything else.
-    def inline(text):
-        parts = re.split(r"(\[[^\]]+\]\([^)]+\))", text)
-        out = []
-        for part in parts:
-            match = re.fullmatch(r"\[([^\]]+)\]\(([^)]+)\)", part)
-            if match:
-                out.append(f'<a href="{html.escape(match.group(2), quote=True)}">{html.escape(match.group(1))}</a>')
-            else:
-                out.append(html.escape(part))
-        return "".join(out)
+    # Markdown table. A raw HTML note shows the tags in the editor and a warning
+    # banner in the viewer. The category color is the only HTML span.
+    shown_deadline = deadline.strip()
+    if shown_deadline.casefold() in {"overdue", "now"}:
+        shown_deadline = f"**{shown_deadline}**"
     rows = [
         ("Category", f'<span style="color:{color}"><b>{label}</b></span>'),
-        ("Description", inline(description)),
-        ("Deadline", deadline_html(deadline)),
-        ("Google Calendar", html.escape(calendar)),
-        ("Reminder", html.escape(reminder)),
+        ("Description", cell(description)),
+        ("Deadline", cell(shown_deadline)),
+        ("Google Calendar", cell(calendar)),
+        ("Reminder", cell(reminder)),
     ]
-    # Rich text, not Markdown. The desktop shows the editor pane only, so raw HTML
-    # tags would be what the user sees. markup_language 2 opens the visual editor.
-    label_style = 'style="border:1px solid #d0d5dd;padding:8px 10px;width:170px;background:#f8f9fb;vertical-align:top"'
-    value_style = 'style="border:1px solid #d0d5dd;padding:8px 10px;vertical-align:top"'
-    lines = [
-        '<table style="border-collapse:collapse;width:100%;max-width:760px">',
-        "<tbody>",
-    ]
+    lines = ["| Field | Value |", "| --- | --- |"]
     for name, value in rows:
-        lines.append(f"<tr><td {label_style}><b>{html.escape(name)}</b></td><td {value_style}>{value}</td></tr>")
-    lines.append("</tbody></table>")
-    lines.append('<p style="color:#667085">Checked against Google Calendar on the day this to-do was written. Birthdays, meetings, and booked courses stay on the calendar and are not copied here.</p>')
+        lines.append(f"| {name} | {value} |")
+    lines.append("")
+    lines.append("Checked against Google Calendar on the day this to-do was written. Birthdays, meetings, and booked courses stay on the calendar and are not copied here.")
     return "\n".join(lines)
 
 
@@ -268,7 +248,6 @@ def cmd_todo(args):
     joplin("use", args.notebook)
     joplin("mktodo", title)
     joplin("set", title, "body", body)
-    joplin("set", title, "markup_language", "2")
     stamp = due_ms(deadline)
     if stamp:
         joplin("set", title, "todo_due", str(stamp))

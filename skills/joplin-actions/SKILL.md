@@ -30,7 +30,7 @@ Reminder: <reminder>
 
 ## Gotchas
 - Joplin's own alarm is not a separate field the script can set. The reminder line records the Google Calendar reminder. Say `Not set` when there is none.
-- The to-do is rich text (`markup_language` 2). The desktop editor pane is on and the preview pane is off, so a Markdown note full of HTML tags is unreadable. Do not put a raw HTML table into a Markdown note.
+- The to-do body is a Markdown table, not a rich-text HTML note. Raw HTML shows the tags in the editor and a warning banner in the viewer. The category color is the only HTML span.
 - Meetings, birthdays, and booked courses stay on Google Calendar. Do not copy them into Actions.
 
 ## Before you finish
