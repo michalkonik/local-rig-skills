@@ -344,8 +344,9 @@ def category_of(value):
     return "admin", CATEGORIES["admin"][0], text.strip() or "Admin and health"
 
 
-def task_cell(title, nid, label):
-    return f"**{label}** [{cell(title)}](:/{nid})"
+def task_cell(title, nid, _label):
+    # The whole cell is the link. A bold word in front of it is not clickable.
+    return f"[{cell(title)}](:/{nid})"
 
 
 def arrange_actions():
@@ -447,7 +448,7 @@ def arrange_actions():
     # Actions index, same order as the to-do list.
     today = datetime.now(ZoneInfo("Europe/Warsaw")).strftime("%-d %b %Y")
     index_lines = [
-        "Only things to do. Soonest deadline at the top. Items with no deadline follow, most important first.",
+        "Only things to do. Soonest deadline at the top. Items with no deadline follow, most important first. Click the task name to open the to-do.",
         "",
         "Write a note for the agent on the to-do, in the row Note for agent. It is copied into the right-hand column here. On a finished item, write it in Completed Actions. A note is read and acted on.",
         "",
@@ -455,8 +456,8 @@ def arrange_actions():
         "",
         "Related, and not copied here: Spotkanie z ksi\u0119gow\u0105 mentzen, 26 Nov 2026 15:00, primary calendar. Its reminder is off.",
         "",
-        "| Task | Deadline | Calendar | Reminder | Note for agent |",
-        "| --- | --- | --- | --- | --- |",
+        "| Category | Task | Deadline | Calendar | Reminder | Note for agent |",
+        "| --- | --- | --- | --- | --- | --- |",
     ]
     # Re-read bodies we just wrote so the index matches.
     for position, item in enumerate(ranked, start=1):
@@ -464,7 +465,7 @@ def arrange_actions():
         calendar = fields.get("Google Calendar", "No").strip() or "No"
         reminder = fields.get("Reminder", "Not set").strip() or "Not set"
         index_lines.append(
-            f"| {task_cell(note['title'], note['id'], label)} | {cell(deadline or 'not set')} | {cell(calendar)} | {cell(reminder)} | {cell(agent)} |"
+            f"| {cell(label)} | {task_cell(note['title'], note['id'], label)} | {cell(deadline or 'not set')} | {cell(calendar)} | {cell(reminder)} | {cell(agent)} |"
         )
     if index is not None:
         con.execute(
