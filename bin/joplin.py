@@ -229,15 +229,18 @@ def action_body(category, description, deadline, calendar, reminder):
         ("Google Calendar", html.escape(calendar)),
         ("Reminder", html.escape(reminder)),
     ]
+    # Rich text, not Markdown. The desktop shows the editor pane only, so raw HTML
+    # tags would be what the user sees. markup_language 2 opens the visual editor.
+    label_style = 'style="border:1px solid #d0d5dd;padding:8px 10px;width:170px;background:#f8f9fb;vertical-align:top"'
+    value_style = 'style="border:1px solid #d0d5dd;padding:8px 10px;vertical-align:top"'
     lines = [
-        '<table>',
-        '<tr><th>Field</th><th>Value</th></tr>',
+        '<table style="border-collapse:collapse;width:100%;max-width:760px">',
+        "<tbody>",
     ]
     for name, value in rows:
-        lines.append(f"<tr><td>{name}</td><td>{value}</td></tr>")
-    lines.append("</table>")
-    lines.append("")
-    lines.append("Checked against Google Calendar on the day this to-do was written. Birthdays, meetings, and booked courses stay on the calendar and are not copied here.")
+        lines.append(f"<tr><td {label_style}><b>{html.escape(name)}</b></td><td {value_style}>{value}</td></tr>")
+    lines.append("</tbody></table>")
+    lines.append('<p style="color:#667085">Checked against Google Calendar on the day this to-do was written. Birthdays, meetings, and booked courses stay on the calendar and are not copied here.</p>')
     return "\n".join(lines)
 
 
@@ -265,6 +268,7 @@ def cmd_todo(args):
     joplin("use", args.notebook)
     joplin("mktodo", title)
     joplin("set", title, "body", body)
+    joplin("set", title, "markup_language", "2")
     stamp = due_ms(deadline)
     if stamp:
         joplin("set", title, "todo_due", str(stamp))
