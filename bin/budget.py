@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 """Build the monthly budget workbook.
 
-One sheet per month. Ten category columns, each an amount plus a description.
+One sheet per month. Ten categories, each with date, amount, and description.
 Row 1 is the editable budget (default 9000) and what is left. Bank rows end
-with [mbank] or [pko]. Other filled rows are manual and must be kept. Card
-repayments sit below the total. Stdlib only.
+with [mbank] or [pko]. Fixed housing rows end with [stałe]. Other filled rows
+are manual and must be kept. A Log sheet records the last covered bank date.
+Card repayments sit below the total. Stdlib only.
 """
-import argparse, json, re, zipfile
+import argparse, datetime, json, re, zipfile
 from xml.sax.saxutils import escape
 
 CATS = [
@@ -29,8 +30,26 @@ GROCERS = (
 )
 HEADER_COLORS = ["1F7A4D", "C46B2C", "1D4E89", "6B4C9A", "0E7C86", "8C3A4B", "A37B12", "2F6F6A", "A14D73", "5C6370"]
 TINTS = ["E7F5EE", "FDE8D4", "E7F0FA", "F3E8F8", "E5F6F7", "F8E6EA", "FBF3D8", "E7F4F3", "F8E7F0", "F2F3F5"]
-PAIRS = [(chr(ord("A") + i * 2), chr(ord("B") + i * 2)) for i in range(len(CATS))]
+FIXED = (
+    (3900, "S mieszkanie czynsz"),
+    (800, "mieszkanie media"),
+    (55, "mieszkanie internet"),
+)
 EMPTY = 8
+
+
+def col_letter(n):
+    letters = ""
+    while n:
+        n, rem = divmod(n - 1, 26)
+        letters = chr(65 + rem) + letters
+    return letters
+
+
+TRIPLES = []
+for _i in range(len(CATS)):
+    base = _i * 3 + 1
+    TRIPLES.append((col_letter(base), col_letter(base + 1), col_letter(base + 2)))
 NS = "http://schemas.openxmlformats.org/spreadsheetml/2006/main"
 BANNER = {
     "Budżet miesiąca", "Wydane", "Zostało do końca miesiąca", "SUM", "WSZYSTKO", "Przychody",
@@ -252,7 +271,7 @@ def describe(tx, trip):
         name += ", zwrot"
     pending = " pending" if tx.get("pending") else ""
     source = tx.get("source") or "mbank"
-    return f"{tx.get('date')} {name}{pending} [{source}]"
+    return f"{name}{pending} [{source}]"
 
 
 def month_key(date_text):
@@ -278,16 +297,19 @@ def group(txs, trips=None):
         value = round(abs(_amount(tx)), 2)
         if (tx.get("category") or "") == "refunds" and _amount(tx) > 0 and kind not in {"income", "transfer"}:
             value = -value
-        line = (value, describe(tx, trip))
+        line = (tx.get("date") or "", value, describe(tx, trip))
         if kind == "income":
             bucket["income"].append(line)
         elif kind == "transfer":
             bucket["transfer"].append(line)
         else:
             bucket[kind].append(line)
-    for bucket in out.values():
+    for key, bucket in out.items():
         for name in list(bucket):
-            bucket[name].sort(key=lambda row: row[1])
+            bucket[name].sort(key=lambda row: (row[0], row[2]))
+        day = key + "-01"
+        fixed = [(day, amount, f"{label} [stałe]") for amount, label in FIXED]
+        bucket["Opłaty cykliczne"] = fixed + bucket["Opłaty cykliczne"]
     return out
 
 
@@ -382,6 +404,7 @@ def make_styles():
     styles.xf("hint", font=4, fill=cream, horizontal="left")
     styles.xf("section", font=1, fill=cream, horizontal="left")
     styles.xf("desc", font=0, fill=white, border=1, horizontal="left", wrap=True)
+    styles.xf("sub", font=4, fill=white, border=1, horizontal="center")
     styles.xf("sum", font=1, fill=gray, border=3, num=True)
     styles.xf("sumlabel", font=1, fill=gray, border=3, horizontal="left")
     styles.xf("total", font=2, fill=green, border=1, num=True)
@@ -389,7 +412,9 @@ def make_styles():
     for i, rgb in enumerate(HEADER_COLORS):
         styles.xf(f"h{i}", font=5, fill=styles.fill(rgb), border=1, horizontal="center", wrap=True)
     for i, rgb in enumerate(TINTS):
-        styles.xf(f"a{i}", font=0, fill=styles.fill(rgb), border=1, num=True)
+        fill = styles.fill(rgb)
+        styles.xf(f"d{i}", font=0, fill=fill, border=1, horizontal="center")
+        styles.xf(f"a{i}", font=0, fill=fill, border=1, num=True)
     return styles
 
 
@@ -408,8 +433,9 @@ def sheet_xml(bucket, note, styles, budget):
     named = styles.named
     height = max((len(bucket.get(name, [])) for name in CATS), default=0) + EMPTY
     header = 3
-    first = 4
-    last = header + height
+    sub = 4
+    first = 5
+    last = sub + height
     sum_row = last + 1
     total_row = sum_row + 1
     rows = []
@@ -420,34 +446,41 @@ def sheet_xml(bucket, note, styles, budget):
               cell("E1", "Zostało do końca miesiąca", style=named["banner"]),
               cell("F1", formula="B1-D1", style=named["left"]),
               cell("G1", "Edytuj żółte pole. Puste kratki są Twoje.", style=named["hint"])]
-    for col in range(8, 21):
-        letter = chr(ord("A") + col - 1)
-        banner.append(cell(f"{letter}1", style=named["banner"]))
+    for col in range(8, len(CATS) * 3 + 1):
+        banner.append(cell(f"{col_letter(col)}1", style=named["banner"]))
     rows.append(f'<row r="1" ht="32" customHeight="1">{"".join(banner)}</row>')
     rows.append('<row r="2" ht="8" customHeight="1"/>')
     heads = []
-    for i, (name, (amount_col, _desc)) in enumerate(zip(CATS, PAIRS)):
-        heads.append(cell(f"{amount_col}{header}", name, style=named[f"h{i}"]))
+    subs = []
+    for i, (name, (date_col, amount_col, desc_col)) in enumerate(zip(CATS, TRIPLES)):
+        heads.append(cell(f"{date_col}{header}", name, style=named[f"h{i}"]))
+        subs.append(cell(f"{date_col}{sub}", "data", style=named["sub"]))
+        subs.append(cell(f"{amount_col}{sub}", "kwota", style=named["sub"]))
+        subs.append(cell(f"{desc_col}{sub}", "opis", style=named["sub"]))
     rows.append(f'<row r="{header}" ht="36" customHeight="1">{"".join(heads)}</row>')
+    rows.append(f'<row r="{sub}">{"".join(subs)}</row>')
     for offset in range(height):
         row_n = first + offset
         bits = []
-        for i, (name, (amount_col, desc_col)) in enumerate(zip(CATS, PAIRS)):
+        for i, (name, (date_col, amount_col, desc_col)) in enumerate(zip(CATS, TRIPLES)):
             lines = bucket.get(name, [])
             if offset < len(lines):
-                amount, text = lines[offset]
+                date, amount, text = lines[offset]
+                bits.append(cell(f"{date_col}{row_n}", date, style=named[f"d{i}"]))
                 bits.append(cell(f"{amount_col}{row_n}", amount, style=named[f"a{i}"]))
                 bits.append(cell(f"{desc_col}{row_n}", text, style=named["desc"]))
             else:
+                bits.append(cell(f"{date_col}{row_n}", style=named[f"d{i}"]))
                 bits.append(cell(f"{amount_col}{row_n}", style=named[f"a{i}"]))
                 bits.append(cell(f"{desc_col}{row_n}", style=named["desc"]))
         rows.append(f'<row r="{row_n}">{"".join(bits)}</row>')
     sums = []
-    for i, (amount_col, desc_col) in enumerate(PAIRS):
+    for date_col, amount_col, desc_col in TRIPLES:
+        sums.append(cell(f"{date_col}{sum_row}", style=named["sumlabel"]))
         sums.append(cell(f"{amount_col}{sum_row}", formula=f"SUM({amount_col}{first}:{amount_col}{last})", style=named["sum"]))
         sums.append(cell(f"{desc_col}{sum_row}", "SUM", style=named["sumlabel"]))
     rows.append(f'<row r="{sum_row}">{"".join(sums)}</row>')
-    parts = ",".join(f"{amount_col}{sum_row}" for amount_col, _desc in PAIRS)
+    parts = ",".join(amount_col + str(sum_row) for _date, amount_col, _desc in TRIPLES)
     rows.append(
         f'<row r="{total_row}" ht="24" customHeight="1">'
         f'{cell("A" + str(total_row), "WSZYSTKO", style=named["section"])}'
@@ -457,45 +490,51 @@ def sheet_xml(bucket, note, styles, budget):
     cursor = total_row + 2
     rows.append(f'<row r="{cursor}">{cell("A" + str(cursor), "Przychody", style=named["section"])}</row>')
     start_income = cursor + 1
-    for amount, text in bucket.get("income", []):
+    for date, amount, text in bucket.get("income", []):
         cursor += 1
         rows.append(
-            f'<row r="{cursor}">{cell("A" + str(cursor), amount, style=named["a9"])}{cell("B" + str(cursor), text, style=named["desc"])}</row>'
+            f'<row r="{cursor}">{cell("A" + str(cursor), date, style=named["d9"])}'
+            f'{cell("B" + str(cursor), amount, style=named["a9"])}{cell("C" + str(cursor), text, style=named["desc"])}</row>'
         )
     for _ in range(4):
         cursor += 1
         rows.append(
-            f'<row r="{cursor}">{cell("A" + str(cursor), style=named["a9"])}{cell("B" + str(cursor), style=named["desc"])}</row>'
+            f'<row r="{cursor}">{cell("A" + str(cursor), style=named["d9"])}'
+            f'{cell("B" + str(cursor), style=named["a9"])}{cell("C" + str(cursor), style=named["desc"])}</row>'
         )
     income_sum = cursor + 1
     rows.append(
-        f'<row r="{income_sum}">{cell("A" + str(income_sum), formula=f"SUM(A{start_income}:A{income_sum - 1})", style=named["sum"])}'
-        f'{cell("B" + str(income_sum), "SUM", style=named["sumlabel"])}</row>'
+        f'<row r="{income_sum}">{cell("B" + str(income_sum), formula=f"SUM(B{start_income}:B{income_sum - 1})", style=named["sum"])}'
+        f'{cell("C" + str(income_sum), "SUM", style=named["sumlabel"])}</row>'
     )
     cursor = income_sum + 2
     rows.append(f'<row r="{cursor}">{cell("A" + str(cursor), "Spłata karty (poza sumą wydatków)", style=named["section"])}</row>')
-    for amount, text in bucket.get("transfer", []):
+    for date, amount, text in bucket.get("transfer", []):
         cursor += 1
         rows.append(
-            f'<row r="{cursor}">{cell("A" + str(cursor), amount, style=named["a2"])}{cell("B" + str(cursor), text, style=named["desc"])}</row>'
+            f'<row r="{cursor}">{cell("A" + str(cursor), date, style=named["d2"])}'
+            f'{cell("B" + str(cursor), amount, style=named["a2"])}{cell("C" + str(cursor), text, style=named["desc"])}</row>'
         )
     if note:
         cursor += 2
         rows.append(f'<row r="{cursor}" ht="32" customHeight="1">{cell("A" + str(cursor), note, style=named["note"])}</row>')
-    cols = "".join(
-        f'<col min="{i}" max="{i}" width="{13 if i % 2 else 30}" customWidth="1"/>' for i in range(1, 21)
-    )
+    cols = []
+    for i in range(1, len(CATS) * 3 + 1):
+        mod = (i - 1) % 3
+        width = 12 if mod == 0 else 13 if mod == 1 else 28
+        cols.append(f'<col min="{i}" max="{i}" width="{width}" customWidth="1"/>')
+    cols = "".join(cols)
     merges = "".join(
-        f'<mergeCell ref="{amount_col}{header}:{desc_col}{header}"/>' for amount_col, desc_col in PAIRS
+        f'<mergeCell ref="{date_col}{header}:{desc_col}{header}"/>' for date_col, _amount, desc_col in TRIPLES
     )
     body = "".join(rows)
     return (
         '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
         f'<worksheet xmlns="{NS}"><sheetPr><tabColor rgb="FF1F7A4D"/></sheetPr>'
-        '<sheetViews><sheetView workbookViewId="0" zoomScale="110"><pane ySplit="3" topLeftCell="A4" '
+        '<sheetViews><sheetView workbookViewId="0" zoomScale="110"><pane ySplit="4" topLeftCell="A5" '
         'activePane="bottomLeft" state="frozen"/></sheetView></sheetViews>'
         f'<cols>{cols}</cols><sheetData>{body}</sheetData>'
-        f'<mergeCells count="{len(PAIRS)}">{merges}</mergeCells>'
+        f'<mergeCells count="{len(TRIPLES)}">{merges}</mergeCells>'
         '<conditionalFormatting sqref="F1"><cfRule type="cellIs" dxfId="0" priority="1" operator="lessThan"><formula>0</formula></cfRule></conditionalFormatting>'
         "</worksheet>"
     )
@@ -518,11 +557,35 @@ def content_types(n_sheets):
     )
 
 
-def write_xlsx(grouped, path, note, budget=9000, budgets=None):
+def log_xml(entries, styles):
+    named = styles.named
+    headers = ["Kiedy", "Źródło", "Pokryte do", "Następne pobranie od", "Uwaga"]
+    rows = [
+        '<row r="1" ht="28" customHeight="1">'
+        + cell("A1", "LOG: następne pobranie z banku zaczyna się od daty w kolumnie Pokryte do, włącznie.", style=named["note"])
+        + "</row>",
+        "<row r=\"2\">" + "".join(
+            cell(col_letter(i) + "2", header, style=named["sub"]) for i, header in enumerate(headers, start=1)
+        ) + "</row>",
+    ]
+    for offset, entry in enumerate(entries):
+        row_n = 3 + offset
+        values = [entry.get("when"), entry.get("source"), entry.get("through"), entry.get("next_from"), entry.get("note")]
+        bits = [cell(col_letter(i) + str(row_n), value or "", style=named["desc"]) for i, value in enumerate(values, start=1)]
+        rows.append(f'<row r="{row_n}">{"".join(bits)}</row>')
+    cols = "".join(f'<col min="{i}" max="{i}" width="{28 if i == 5 else 22}" customWidth="1"/>' for i in range(1, 6))
+    return (
+        '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+        f'<worksheet xmlns="{NS}"><sheetPr><tabColor rgb="FF5C6370"/></sheetPr>'
+        f'<cols>{cols}</cols><sheetData>{"".join(rows)}</sheetData></worksheet>'
+    )
+
+
+def write_xlsx(grouped, path, note, budget=9000, budgets=None, log=None):
     styles = make_styles()
     keys = sorted(grouped)
     files = {
-        "[Content_Types].xml": content_types(len(keys)),
+        "[Content_Types].xml": content_types(len(keys) + 1),
         "_rels/.rels": (
             '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
             '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
@@ -540,8 +603,14 @@ def write_xlsx(grouped, path, note, budget=9000, budgets=None):
         rels.append(
             f'<Relationship Id="rId{i}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet{i}.xml"/>'
         )
+    log_id = len(keys) + 1
+    files[f"xl/worksheets/sheet{log_id}.xml"] = log_xml(log or [], styles)
+    sheet_tags.append(f'<sheet name="Log" sheetId="{log_id}" r:id="rId{log_id}"/>')
     rels.append(
-        f'<Relationship Id="rId{len(keys) + 1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>'
+        f'<Relationship Id="rId{log_id}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet{log_id}.xml"/>'
+    )
+    rels.append(
+        f'<Relationship Id="rId{log_id + 1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>'
     )
     files["xl/workbook.xml"] = (
         '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
@@ -579,9 +648,11 @@ def manual_rows(path):
                 text = node.text or ""
                 if not text or text in BANNER or text in CATS:
                     continue
-                if text.endswith("]") or "[mbank]" in text or "[pko]" in text:
+                if text in {"data", "kwota", "opis", "Kiedy", "Źródło", "Pokryte do", "Następne pobranie od", "Uwaga"}:
                     continue
-                if text.startswith(("Spłata", "PKO", "Edytuj")):
+                if text.endswith("]") or "[mbank]" in text or "[pko]" in text or "[stałe]" in text:
+                    continue
+                if text.startswith(("Spłata", "PKO", "Edytuj", "LOG")):
                     continue
                 found.append(text)
     return found
@@ -628,9 +699,20 @@ def cmd_build(args):
     trips = _load_trips(args.trips)
     budgets = json.loads(open(args.budgets, encoding="utf-8").read()) if args.budgets else None
     grouped = group(txs, trips)
-    write_xlsx(grouped, args.out, args.note or "", budget=args.budget, budgets=budgets)
+    covered = args.covered or max(tx["date"] for tx in txs)
+    when = args.updated or datetime.date.today().isoformat()
+    log = json.loads(open(args.log, encoding="utf-8").read()) if args.log else []
+    if not isinstance(log, list):
+        raise SystemExit("ERROR log file must be a list")
+    row = {"when": when, "source": args.source, "through": covered, "next_from": covered, "note": args.note or ""}
+    if not log or any(log[-1].get(key) != row[key] for key in ("source", "through", "note")):
+        log.append(row)
+    if args.log_out:
+        json.dump(log, open(args.log_out, "w"), ensure_ascii=False, indent=2)
+        print(f"OK log {args.log_out} through {covered}")
+    write_xlsx(grouped, args.out, args.note or "", budget=args.budget, budgets=budgets, log=log)
     counts = {key: sum(len(v) for name, v in bucket.items() if name in CATS) for key, bucket in grouped.items()}
-    print(f"OK build {args.out} months {len(grouped)} " + " ".join(f"{month_title(k)}:{counts[k]}" for k in sorted(counts)))
+    print(f"OK build {args.out} months {len(grouped)} through {covered} " + " ".join(f"{month_title(k)}:{counts[k]}" for k in sorted(counts)))
 
 
 def selftest():
@@ -657,19 +739,30 @@ def selftest():
         {"date": "2026-11-07", "amount": "-10", "title": "SPLATA KARTY", "category": "transport", "source": "mbank"},
     ]
     grouped = group(sample, trips)
-    assert grouped["2026-10"]["wydatki w podróży"][0][0] == 83.60
-    assert "Cafe Test (Paris)" in grouped["2026-10"]["wydatki w podróży"][0][1]
-    assert grouped["2026-11"]["transfer"][0][0] == 10
+    assert grouped["2026-10"]["wydatki w podróży"][0][1] == 83.60
+    assert "Cafe Test (Paris)" in grouped["2026-10"]["wydatki w podróży"][0][2]
+    assert grouped["2026-11"]["transfer"][0][1] == 10
+    fixed = grouped["2026-10"]["Opłaty cykliczne"][:3]
+    assert [row[1] for row in fixed] == [3900, 800, 55]
+    assert fixed[0] == ("2026-10-01", 3900, "S mieszkanie czynsz [stałe]")
     import os, tempfile
     path = os.path.join(tempfile.mkdtemp(), "b.xlsx")
-    write_xlsx(grouped, path, "PKO note", budget=9000)
+    write_xlsx(grouped, path, "PKO note", budget=9000, log=[{
+        "when": "2026-11-18", "source": "mbank", "through": "2026-11-07",
+        "next_from": "2026-11-07", "note": "PKO note",
+    }])
     with zipfile.ZipFile(path) as zf:
         xml = zf.read("xl/worksheets/sheet1.xml").decode()
         styles = zf.read("xl/styles.xml").decode()
-    assert "Produkty spożywcze" in xml and "SUM(A4:" in xml and "[mbank]" in xml
+        logged = zf.read("xl/worksheets/sheet3.xml").decode()
+        book = zf.read("xl/workbook.xml").decode()
+    assert "Produkty spożywcze" in xml and "SUM(B5:" in xml and "[mbank]" in xml
+    assert "S mieszkanie czynsz" in xml and ">data<" in xml
     assert "Budżet miesiąca" in xml and "<f>B1-D1</f>" in xml and "9000" in xml
     assert "F6C945" in styles and "mergeCell" in xml
+    assert "Log" in book and "Pokryte do" in logged and "2026-11-07" in logged
     assert "Budżet miesiąca" not in manual_rows(path)
+    assert "S mieszkanie czynsz" not in " ".join(manual_rows(path))
     print("OK selftest")
 
 
@@ -683,6 +776,11 @@ def build():
     cmd.add_argument("--trips", default="")
     cmd.add_argument("--budget", type=float, default=9000)
     cmd.add_argument("--budgets", default="")
+    cmd.add_argument("--covered", default="")
+    cmd.add_argument("--updated", default="")
+    cmd.add_argument("--source", default="mbank")
+    cmd.add_argument("--log", default="")
+    cmd.add_argument("--log-out", default="")
     cmd.set_defaults(fn=cmd_build)
     manual = sub.add_parser("manual")
     manual.add_argument("--xlsx", required=True)

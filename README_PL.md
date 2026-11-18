@@ -96,7 +96,7 @@ Skrypt: `bin/pko.py`. Sekrety: pozycja Bitwarden `enablebanking-pko` (`bw-secret
 
 | Skill | Co robi |
 |---|---|
-| `/manage-budget-file` | uzupełnia arkusz Google `Budżet 2026` z mBank i PKO, jedna karta na miesiąc, te same dziesięć kategorii co `2025_budget.xlsx`; żółte B1 to edytowalny budżet miesiąca; ręczne wiersze zostają |
+| `/manage-budget-file` | uzupełnia arkusz Google `Budżet 2026` z mBank i PKO, jedna karta na miesiąc, dziesięć kategorii z datą, kwotą i opisem; żółte B1 to edytowalny budżet miesiąca; karta Log mówi, dokąd sięga odczyt banku |
 
 Skrypt: `bin/budget.py`. Id arkusza jest w `~/.local/state/rig-skills/budget.json`, nie w gicie.
 Pełna, generowana lista: [INDEX.md](INDEX.md).
