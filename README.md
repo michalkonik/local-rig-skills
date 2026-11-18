@@ -52,17 +52,18 @@ them, in both chat UIs, and so does the OpenClaw agent Pedro. *Polska wersja: [R
 | `/income-weekly-review` | weekly page from the ledger: numbers per stream, keep/kill verdicts per the course's criteria, upcoming deadlines, your decisions |
 | `/deal-hunter <status, deals, show, explain, books, start, stop>` | query and control the Deal Hunter agent (undervalued-hardware deals, tiers, net breakdown, costs); it only finds deals, never buys or contacts sellers |
 
-**Notes (OneNote via Microsoft Graph)**
+**Notes (Joplin). OneNote is retired; the OneNote skills are removed.**
 
 | Skill | What it does |
 |---|---|
-| `/onenote-list` | notebook → section group → section tree, or the pages in one section |
-| `/onenote-read` | search pages and print one page as text |
-| `/onenote-write` | create a page or append text; sends only with `--apply` |
+| `/joplin-list` | notebook tree, or the notes in one notebook |
+| `/joplin-read` | search notes and print one note as text |
+| `/joplin-write` | create a notebook or note, or append text; sends only with `--apply` |
+| `/joplin-actions` | action to-dos sorted by deadline; sends only with `--apply` |
 
-The script is `bin/onenote.py`. It reads Bitwarden item `onenote`, field `access_token` (`bw-secret onenote#access_token`). The token needs Graph scope `Notes.ReadWrite`.
+The script is `bin/joplin.py`. Do not read or write OneNote.
 
-**OneDrive (same Graph token, scope `Files.ReadWrite`)**
+**OneDrive (Graph token, scope `Files.ReadWrite`)**
 
 | Skill | What it does |
 |---|---|
@@ -70,7 +71,7 @@ The script is `bin/onenote.py`. It reads Bitwarden item `onenote`, field `access
 | `/drive-read` | print a small text file, or the size when it is not text |
 | `/drive-write` | upload, create a folder, or delete one item; sends only with `--apply` |
 
-Script: `bin/drive.py`. Same Bitwarden field. A token copied before consent cannot call the drive.
+Script: `bin/drive.py`. Token: Bitwarden item `onenote`, field `access_token` (`bw-secret onenote#access_token`). The item name is only the token store. A token copied before consent cannot call the drive.
 
 **Google Drive (account `michal.konik.praca@gmail.com`, OAuth scope `drive`)**
 
