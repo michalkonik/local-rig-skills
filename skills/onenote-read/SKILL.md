@@ -27,7 +27,9 @@ For a search with several hits, list `- title | id` and read a page only if the 
 
 ## Gotchas
 - Long pages are truncated on screen and saved under `~/.local/state/rig-skills/onenote/`.
-- A 401 that mentions Notes.ReadWrite means the saved token cannot read OneNote. Stop.
+- A page id contains `!` and is opened directly. A title is found one section at a time. Do not call `GET /me/onenote/pages`: this account returns `400 20266` (too many sections).
+- A 401 means the saved token expired or was rejected. Graph Explorer tokens last about an hour. Stop and ask for a new one. Do not retry with a different token you invented.
+- `40001` inside Graph Explorer, while the same token works in a direct call, means Explorer did not attach the token. Copy it again after a query that returns 200.
 
 ## Before you finish
 - [ ] the text is from `read` or the saved file, not guessed

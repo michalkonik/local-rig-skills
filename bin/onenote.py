@@ -3,7 +3,7 @@
 
 Never print the token. Writes (create, append) do nothing unless --apply is set.
 """
-import argparse, html, json, os, pathlib, re, subprocess, sys, urllib.error, urllib.parse, urllib.request
+import argparse, html, json, os, pathlib, re, subprocess, sys, time, urllib.error, urllib.parse, urllib.request
 
 GRAPH = "https://graph.microsoft.com/v1.0"
 STATE = pathlib.Path.home() / ".local/state/rig-skills/onenote"
@@ -37,7 +37,7 @@ def load_token():
     return token
 
 
-def graph(method, path, query=None, body=None, content_type=None, token=None, quiet=False):
+def graph(method, path, query=None, body=None, content_type=None, token=None, quiet=False, attempt=0):
     qs = ("?" + urllib.parse.urlencode(query, safe="$,'\"")) if query else ""
     url = GRAPH + path + qs
     data = None
@@ -60,6 +60,10 @@ def graph(method, path, query=None, body=None, content_type=None, token=None, qu
                 return json.loads(raw.decode())
             return {"_text": raw.decode(errors="replace")}
     except urllib.error.HTTPError as e:
+        if e.code == 429 and attempt < 3 and not quiet:
+            e.read()
+            time.sleep(5 * (attempt + 1))
+            return graph(method, path, query, body, content_type, token, quiet, attempt + 1)
         raw = e.read().decode(errors="replace")
         code, msg = "", raw[:240].replace("\n", " ")
         try:
@@ -233,11 +237,14 @@ def html_to_text(raw):
     return raw.strip()
 
 
-def page_html(title, text):
-    parts = []
-    for block in text.split("\n"):
-        parts.append(f"<p>{html.escape(block) if block else ' '}</p>")
-    body = "".join(parts) or "<p></p>"
+def page_html(title, text, html_body=False):
+    if html_body:
+        body = text.strip() or "<p></p>"
+    else:
+        parts = []
+        for block in text.split("\n"):
+            parts.append(f"<p>{html.escape(block) if block else ' '}</p>")
+        body = "".join(parts) or "<p></p>"
     return (
         "<!DOCTYPE html><html><head><title>"
         + html.escape(title)
@@ -261,16 +268,24 @@ def read_text_arg(args):
     say("ERROR pass --text, --file, or stdin", 2)
 
 
+def looks_like_id(wanted):
+    return "!" in wanted or len(wanted) > 40
+
+
 def find_page(wanted):
-    rows = get_list("/me/onenote/pages", {"$select": "id,title", "$top": "50"}, 50)
-    # A direct id get is cheaper when the user pasted an id (they contain '!').
-    if "!" in wanted or len(wanted) > 40:
+    # Never list /me/onenote/pages. That call returns 400 20266 once the account
+    # has many sections, and it used to run before the direct id lookup.
+    if looks_like_id(wanted):
         try:
             data = graph("GET", "/me/onenote/pages/" + urllib.parse.quote(wanted, safe="") + "?$select=id,title", quiet=True)
             if data.get("id"):
                 return data
         except GiveUp:
             pass
+    rows = []
+    for sec in get_list("/me/onenote/sections", {"$select": "id,displayName"}, MAX_TOP):
+        sid = urllib.parse.quote(sec["id"], safe="")
+        rows.extend(get_list(f"/me/onenote/sections/{sid}/pages", {"$select": "id,title"}, 50))
     return resolve(rows, wanted, "page")
 
 
@@ -297,7 +312,7 @@ def cmd_create(args):
     title = args.title.strip()
     if not title:
         say("ERROR --title required", 2)
-    doc = page_html(title, text)
+    doc = page_html(title, text, html_body=bool(args.html))
     print(f"PLAN create section {label(sec)} | {sec.get('id')}")
     print(f"PLAN title {title} chars {len(text)}")
     if not args.apply:
@@ -324,6 +339,9 @@ def selftest():
     assert "<title>A &amp; B</title>" in doc and "&lt;two&gt;" in doc
     assert "<p>one</p><p>&lt;two&gt;</p>" in fragment("one\n<two>")
     assert html_to_text("<p>Hi<br>there</p><script>x</script>") == "Hi\nthere"
+    rich = page_html("Board", '<table><tr><td style="background-color:#f4c7c3"><p>Urgent</p></td></tr></table>', html_body=True)
+    assert "background-color:#f4c7c3" in rich and "<table>" in rich
+    assert looks_like_id("0-abc!1-def") and not looks_like_id("Taxes")
     os.environ["ONENOTE_TOKEN"] = "test-token"
     calls = []
 
@@ -343,14 +361,14 @@ def selftest():
         globals()["get_list"] = lambda path, query, top: [{"id": "sec-1", "displayName": "Taxes"}]
         buf = io_capture()
         try:
-            cmd_create(argparse.Namespace(section="Taxes", title="T", text="hello", file=None, apply=False))
+            cmd_create(argparse.Namespace(section="Taxes", title="T", text="hello", file=None, apply=False, html=False))
         except GiveUp as e:
             assert e.code == 10, e.code
         out = buf.getvalue()
         assert "PLAN create" in out and "not sent" in out
         assert calls == []
         buf = io_capture()
-        cmd_create(argparse.Namespace(section="Taxes", title="T", text="hello", file=None, apply=True))
+        cmd_create(argparse.Namespace(section="Taxes", title="T", text="hello", file=None, apply=True, html=False))
         assert calls and calls[0][0] == "POST"
         assert "OK created" in buf.getvalue()
     finally:
@@ -402,6 +420,7 @@ def build():
     a.add_argument("--title", required=True)
     a.add_argument("--text")
     a.add_argument("--file")
+    a.add_argument("--html", action="store_true")
     a.add_argument("--apply", action="store_true")
     a = add("append", cmd_append)
     a.add_argument("page")
