@@ -81,6 +81,16 @@ Skrypt: `bin/drive.py`. To samo pole Bitwarden. Token skopiowany przed zgodą ni
 | `/gdrive-write` | wysyłka, podmiana Dokumentu/Arkusza, zapis komórek, nowy folder albo kosz; wysyła tylko z `--apply` |
 
 Skrypt: `bin/gdrive.py`. Token: `~/Documents/keep/gmail-tokens.json`. To nie jest skrypt OneDrive. Zapis komórek wymaga włączonego Sheets API w projekcie OAuth.
+
+**PKO (Enable Banking, tylko odczyt)**
+
+| Skill | Co robi |
+|---|---|
+| `/pko-balance` | salda i limit karty kredytowej dla podłączonych rachunków PKO |
+| `/pko-transactions` | historia transakcji dla podanego zakresu dat |
+| `/pko-card-timeline` | ile dni do odsetek karty, tylko gdy bank przysłał termin spłaty |
+
+Skrypt: `bin/pko.py`. Sekrety: pozycja Bitwarden `enablebanking-pko` (`bw-secret`, nigdy w gicie). mBank zostaje przy `/read-mbank-balance`. Podłączenie konta w panelu tylko aktywuje aplikację; salda wymagają jednej sesji zgody przez API.
 Pełna, generowana lista: [INDEX.md](INDEX.md).
 
 ## Jak modele dostają skille
