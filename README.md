@@ -81,6 +81,16 @@ Script: `bin/drive.py`. Same Bitwarden field. A token copied before consent cann
 | `/gdrive-write` | upload, replace a Doc/Sheet, write cells, create a folder, or trash one item; sends only with `--apply` |
 
 Script: `bin/gdrive.py`. Token: `~/Documents/keep/gmail-tokens.json`. Not the OneDrive script. Cell writes need the Sheets API enabled on the OAuth project.
+
+**PKO (Enable Banking, read only)**
+
+| Skill | What it does |
+|---|---|
+| `/pko-balance` | balances and the credit-card limit for the consented PKO accounts |
+| `/pko-transactions` | transactions for an inclusive date range |
+| `/pko-card-timeline` | days until card interest only when the bank feed includes a due date |
+
+Script: `bin/pko.py`. Secrets: Bitwarden item `enablebanking-pko` (`bw-secret`, never in git). mBank stays on `/read-mbank-balance`. The control-panel account link activates the app; balances need one API consent session.
 Full generated list: [INDEX.md](INDEX.md).
 
 ## How the models get the skills
