@@ -96,7 +96,7 @@ Script: `bin/pko.py`. Secrets: Bitwarden item `enablebanking-pko` (`bw-secret`, 
 
 | Skill | What it does |
 |---|---|
-| `/manage-budget-file` | fills Google Sheet `Budżet 2026` from mBank and PKO, one tab per month, same ten categories as `2025_budget.xlsx`; manual rows stay |
+| `/manage-budget-file` | fills Google Sheet `Budżet 2026` from mBank and PKO, one tab per month, same ten categories as `2025_budget.xlsx`; yellow B1 is the editable monthly budget; manual rows stay |
 
 Script: `bin/budget.py`. The sheet id is in `~/.local/state/rig-skills/budget.json`, not in git.
 Full generated list: [INDEX.md](INDEX.md).
