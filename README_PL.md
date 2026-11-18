@@ -91,6 +91,14 @@ Skrypt: `bin/gdrive.py`. Token: `~/Documents/keep/gmail-tokens.json`. To nie jes
 | `/pko-card-timeline` | ile dni do odsetek karty, tylko gdy bank przysłał termin spłaty |
 
 Skrypt: `bin/pko.py`. Sekrety: pozycja Bitwarden `enablebanking-pko` (`bw-secret`, nigdy w gicie). mBank zostaje przy `/read-mbank-balance`. Podłączenie konta w panelu tylko aktywuje aplikację; salda wymagają jednej sesji zgody przez API.
+
+**Arkusz budżetu**
+
+| Skill | Co robi |
+|---|---|
+| `/manage-budget-file` | uzupełnia arkusz Google `Budżet 2026` z mBank i PKO, jedna karta na miesiąc, te same dziesięć kategorii co `2025_budget.xlsx`; ręczne wiersze zostają |
+
+Skrypt: `bin/budget.py`. Id arkusza jest w `~/.local/state/rig-skills/budget.json`, nie w gicie.
 Pełna, generowana lista: [INDEX.md](INDEX.md).
 
 ## Jak modele dostają skille
