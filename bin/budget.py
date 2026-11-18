@@ -338,7 +338,7 @@ class Styles:
                 '<bottom style="thin"><color rgb="FFD0D5DD"/></bottom></border>'
             ),
         ]
-        self.xfs = ['<xf numFmtId="0" fontId="0" fillId="0" borderId="0"/>']
+        self.xfs = ['<xf numFmtId="0" fontId="0" fillId="0" borderId="0" applyAlignment="1"><alignment wrapText="1" vertical="center"/></xf>']
         self.named = {}
 
     def _box(self, style, rgb):
@@ -353,18 +353,13 @@ class Styles:
         )
         return len(self.fills) - 1
 
-    def xf(self, name, font=0, fill=0, border=0, num=False, horizontal=None, wrap=False):
+    def xf(self, name, font=0, fill=0, border=0, num=False, horizontal=None, wrap=True):
         self.named[name] = len(self.xfs)
-        align = ""
-        if horizontal or wrap:
-            bits = []
-            if horizontal:
-                bits.append(f' horizontal="{horizontal}"')
-            bits.append(' vertical="center"')
-            if wrap:
-                bits.append(' wrapText="1"')
-            align = "<alignment" + "".join(bits) + "/>"
-        apply = ' applyAlignment="1"' if align else ""
+        bits = [' vertical="center"', ' wrapText="1"']
+        if horizontal:
+            bits.insert(0, f' horizontal="{horizontal}"')
+        align = "<alignment" + "".join(bits) + "/>"
+        apply = ' applyAlignment="1"'
         num_id = ' numFmtId="164" applyNumberFormat="1"' if num else ' numFmtId="0"'
         self.xfs.append(
             f'<xf{num_id} fontId="{font}" fillId="{fill}" borderId="{border}"'
@@ -760,6 +755,7 @@ def selftest():
     assert "S mieszkanie czynsz" in xml and ">data<" in xml
     assert "Budżet miesiąca" in xml and "<f>B1-D1</f>" in xml and "9000" in xml
     assert "F6C945" in styles and "mergeCell" in xml
+    assert styles.count("<xf") == styles.count('wrapText="1"')
     assert "Log" in book and "Pokryte do" in logged and "2026-11-07" in logged
     assert "Budżet miesiąca" not in manual_rows(path)
     assert "S mieszkanie czynsz" not in " ".join(manual_rows(path))
