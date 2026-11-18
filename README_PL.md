@@ -71,6 +71,16 @@ Skrypt to `bin/onenote.py`. Czyta pole `access_token` z pozycji Bitwarden `oneno
 | `/drive-write` | wysyłka, nowy folder albo usunięcie jednej rzeczy; wysyła tylko z `--apply` |
 
 Skrypt: `bin/drive.py`. To samo pole Bitwarden. Token skopiowany przed zgodą nie otworzy dysku.
+
+**Google Drive (konto `michal.konik.praca@gmail.com`, zakres OAuth `drive`)**
+
+| Skill | Co robi |
+|---|---|
+| `/gdrive-list` | lista jednego folderu Mojego dysku albo szukanie po nazwie |
+| `/gdrive-read` | podgląd Dokumentu lub małego pliku tekstowego, albo pobranie (Arkusze jako xlsx, Dokumenty jako docx) |
+| `/gdrive-write` | wysyłka, podmiana Dokumentu/Arkusza, zapis komórek, nowy folder albo kosz; wysyła tylko z `--apply` |
+
+Skrypt: `bin/gdrive.py`. Token: `~/Documents/keep/gmail-tokens.json`. To nie jest skrypt OneDrive. Zapis komórek wymaga włączonego Sheets API w projekcie OAuth.
 Pełna, generowana lista: [INDEX.md](INDEX.md).
 
 ## Jak modele dostają skille
