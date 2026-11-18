@@ -71,6 +71,16 @@ The script is `bin/onenote.py`. It reads Bitwarden item `onenote`, field `access
 | `/drive-write` | upload, create a folder, or delete one item; sends only with `--apply` |
 
 Script: `bin/drive.py`. Same Bitwarden field. A token copied before consent cannot call the drive.
+
+**Google Drive (account `michal.konik.praca@gmail.com`, OAuth scope `drive`)**
+
+| Skill | What it does |
+|---|---|
+| `/gdrive-list` | list one My Drive folder, or search by name |
+| `/gdrive-read` | preview a Doc or small text file, or download (Sheets as xlsx, Docs as docx) |
+| `/gdrive-write` | upload, replace a Doc/Sheet, write cells, create a folder, or trash one item; sends only with `--apply` |
+
+Script: `bin/gdrive.py`. Token: `~/Documents/keep/gmail-tokens.json`. Not the OneDrive script. Cell writes need the Sheets API enabled on the OAuth project.
 Full generated list: [INDEX.md](INDEX.md).
 
 ## How the models get the skills
