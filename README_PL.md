@@ -93,6 +93,16 @@ Skrypt: `bin/gdrive.py`. Token: `~/Documents/keep/gmail-tokens.json`. To nie jes
 
 Skrypt: `bin/pko.py`. Sekrety: pozycja Bitwarden `enablebanking-pko` (`bw-secret`, nigdy w gicie). mBank zostaje przy `/read-mbank-balance`. Podłączenie konta w panelu tylko aktywuje aplikację; salda wymagają jednej sesji zgody przez API.
 
+**OKX (tylko odczyt)**
+
+| Skill | Co robi |
+|---|---|
+| `/okx-balance` | salda konta tradingowego i konta funding |
+| `/okx-transactions` | historia rachunku, a transakcje gdy podano instrument |
+| `/okx-withdrawals` | historia wypłat i wpłat; nie wysyła wypłaty |
+
+Skrypt: `bin/okx.py`. Sekrety: pozycja Bitwarden `okx`, pola `key`, `secret` i `passphrase` (`bw-secret`, nigdy w gicie). Bez zleceń i przelewów.
+
 **Arkusz budżetu**
 
 | Skill | Co robi |

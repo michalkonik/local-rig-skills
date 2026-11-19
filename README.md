@@ -93,6 +93,16 @@ Script: `bin/gdrive.py`. Token: `~/Documents/keep/gmail-tokens.json`. Not the On
 
 Script: `bin/pko.py`. Secrets: Bitwarden item `enablebanking-pko` (`bw-secret`, never in git). mBank stays on `/read-mbank-balance`. The control-panel account link activates the app; balances need one API consent session.
 
+**OKX (read only)**
+
+| Skill | What it does |
+|---|---|
+| `/okx-balance` | trading-account and funding-account balances |
+| `/okx-transactions` | account bills, or spot fills when an instrument is named |
+| `/okx-withdrawals` | withdrawal and deposit history; does not send a withdrawal |
+
+Script: `bin/okx.py`. Secrets: Bitwarden item `okx`, fields `key`, `secret`, and `passphrase` (`bw-secret`, never in git). No orders and no withdrawals are sent.
+
 **Budget sheet**
 
 | Skill | What it does |
