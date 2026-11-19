@@ -203,14 +203,13 @@ def cell(text):
 
 
 def action_body(category, description, deadline, calendar, reminder, agent_note=""):
-    color, label = CATEGORIES[category]
-    # Markdown table. A raw HTML note shows the tags in the editor and a warning
-    # banner in the viewer. The category color is the only HTML span.
+    _color, label = CATEGORIES[category]
+    # Markdown only. Joplin shows raw HTML inside a table cell, including on the Mac.
     shown_deadline = deadline.strip()
     if shown_deadline.casefold() in {"overdue", "now"}:
         shown_deadline = f"**{shown_deadline}**"
     rows = [
-        ("Category", f'<span style="color:{color}"><b>{label}</b></span>'),
+        ("Category", f"**{label}**"),
         ("Description", cell(description)),
         ("Deadline", cell(shown_deadline)),
         ("Google Calendar", cell(calendar)),
@@ -296,9 +295,6 @@ UNDATED_RANK = {
     "Check the Atlassian MCP in Ledger": 120,
 }
 CATEGORY_RANK = {"admin": 200, "company": 210, "money": 220, "work": 230}
-LABEL_COLOR = {label: color for color, label in CATEGORIES.values()}
-
-
 def table_rows(body):
     rows = []
     for line in body.splitlines():
@@ -341,16 +337,16 @@ def sort_key(title, deadline, category):
 
 
 def category_of(value):
-    text = re.sub(r"<[^>]+>", "", value)
+    text = re.sub(r"<[^>]+>", "", value).replace("**", "")
     for key, (color, label) in CATEGORIES.items():
         if label.casefold() == text.strip().casefold():
             return key, color, label
     return "admin", CATEGORIES["admin"][0], text.strip() or "Admin and health"
 
 
-def task_cell(title, nid, label):
-    color = LABEL_COLOR.get(label, "#027a48")
-    return f'<span style="color:{color}">[{cell(title)}](:/{nid})</span>'
+def task_cell(title, nid, _label):
+    # The whole cell is the link. A bold word in front of it is not clickable.
+    return f"[{cell(title)}](:/{nid})"
 
 
 def arrange_actions():
@@ -452,7 +448,7 @@ def arrange_actions():
     # Actions index, same order as the to-do list.
     today = datetime.now(ZoneInfo("Europe/Warsaw")).strftime("%-d %b %Y")
     index_lines = [
-        "Only things to do. Soonest deadline at the top. Items with no deadline follow, most important first.",
+        "Only things to do. Soonest deadline at the top. Items with no deadline follow, most important first. Click the task name to open the to-do.",
         "",
         "Write a note for the agent on the to-do, in the row Note for agent. It is copied into the right-hand column here. On a finished item, write it in Completed Actions. A note is read and acted on.",
         "",
@@ -460,8 +456,8 @@ def arrange_actions():
         "",
         "Related, and not copied here: Spotkanie z ksi\u0119gow\u0105 mentzen, 26 Nov 2026 15:00, primary calendar. Its reminder is off.",
         "",
-        "| Task | Deadline | Calendar | Reminder | Note for agent |",
-        "| --- | --- | --- | --- | --- |",
+        "| Category | Task | Deadline | Calendar | Reminder | Note for agent |",
+        "| --- | --- | --- | --- | --- | --- |",
     ]
     # Re-read bodies we just wrote so the index matches.
     for position, item in enumerate(ranked, start=1):
@@ -469,7 +465,7 @@ def arrange_actions():
         calendar = fields.get("Google Calendar", "No").strip() or "No"
         reminder = fields.get("Reminder", "Not set").strip() or "Not set"
         index_lines.append(
-            f"| {task_cell(note['title'], note['id'], label)} | {cell(deadline or 'not set')} | {cell(calendar)} | {cell(reminder)} | {cell(agent)} |"
+            f"| {cell(label)} | {task_cell(note['title'], note['id'], label)} | {cell(deadline or 'not set')} | {cell(calendar)} | {cell(reminder)} | {cell(agent)} |"
         )
     if index is not None:
         con.execute(
