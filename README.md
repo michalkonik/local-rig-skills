@@ -92,6 +92,14 @@ Script: `bin/gdrive.py`. Token: `~/Documents/keep/gmail-tokens.json`. Not the On
 | `/pko-card-timeline` | days until card interest only when the bank feed includes a due date |
 
 Script: `bin/pko.py`. Secrets: Bitwarden item `enablebanking-pko` (`bw-secret`, never in git). mBank stays on `/read-mbank-balance`. The control-panel account link activates the app; balances need one API consent session.
+
+**Budget sheet**
+
+| Skill | What it does |
+|---|---|
+| `/manage-budget-file` | fills Google Sheet `Budżet 2026` from mBank and PKO, one tab per month, ten categories with date, amount, and description; yellow B1 is the editable monthly budget; Log tab says how far the bank read got |
+
+Script: `bin/budget.py`. The sheet id is in `~/.local/state/rig-skills/budget.json`, not in git.
 Full generated list: [INDEX.md](INDEX.md).
 
 ## How the models get the skills
