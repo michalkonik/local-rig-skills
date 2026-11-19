@@ -93,6 +93,16 @@ Script: `bin/gdrive.py`. Token: `~/Documents/keep/gmail-tokens.json`. Not the On
 
 Script: `bin/pko.py`. Secrets: Bitwarden item `enablebanking-pko` (`bw-secret`, never in git). mBank stays on `/read-mbank-balance`. The control-panel account link activates the app; balances need one API consent session.
 
+**Gate.io (read only)**
+
+| Skill | What it does |
+|---|---|
+| `/gate-balance` | spot balances, available and locked, for the whitelisted key |
+| `/gate-transactions` | spot ledger history, and personal trades when a pair is named |
+| `/gate-withdrawals` | withdrawal and deposit history; it does not send a withdrawal |
+
+Script: `bin/gate.py`. Secrets: Bitwarden item `gateio`, fields `key` and `secret` (`bw-secret`, never in git). No orders or transfers.
+
 **Budget sheet**
 
 | Skill | What it does |

@@ -93,6 +93,16 @@ Skrypt: `bin/gdrive.py`. Token: `~/Documents/keep/gmail-tokens.json`. To nie jes
 
 Skrypt: `bin/pko.py`. Sekrety: pozycja Bitwarden `enablebanking-pko` (`bw-secret`, nigdy w gicie). mBank zostaje przy `/read-mbank-balance`. Podłączenie konta w panelu tylko aktywuje aplikację; salda wymagają jednej sesji zgody przez API.
 
+**Gate.io (tylko odczyt)**
+
+| Skill | Co robi |
+|---|---|
+| `/gate-balance` | salda spot, dostępne i zablokowane, dla klucza z whitelistą IP |
+| `/gate-transactions` | historia księgi spot, a transakcje własne gdy podano parę |
+| `/gate-withdrawals` | historia wypłat i wpłat; nie wysyła wypłaty |
+
+Skrypt: `bin/gate.py`. Sekrety: pozycja Bitwarden `gateio`, pola `key` i `secret` (`bw-secret`, nigdy w gicie). Bez zleceń i przelewów.
+
 **Arkusz budżetu**
 
 | Skill | Co robi |
