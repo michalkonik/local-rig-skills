@@ -64,10 +64,10 @@ Avoid description-only `ls_entry` patches while models are loaded — reload unl
   `.venv/bin`; transient user unit `deal-hunter`, no autostart). Never buys or contacts sellers. Pedro queries it
   via /deal-hunter; doc `13-DEAL-HUNTER.md`.
 
-## Microsoft Graph (OneNote and OneDrive)
-Token `bw-secret onenote#access_token` (never print it). Scopes `Notes.ReadWrite`, `Files.ReadWrite`.
-Consent does not update a saved token; replace the field after consent. Skills `/onenote-*` and `/drive-*`.
-Scripts `bin/onenote.py` and `bin/drive.py`. Writes only with `--apply`.
+## Notes and files
+OneNote is retired. Do not read or write it.
+Notes and action items: `/joplin-*`, script `bin/joplin.py`.
+OneDrive token: `bw-secret onenote#access_token` (never print it). The item name is only the store. Scope `Files.ReadWrite`. Skills `/drive-*`, script `bin/drive.py`. Writes only with `--apply`.
 
 ## Docs (`$R/llm-private-education/en/`)
 00 start | 01 hardware | 02 access | 03 models (+ `reference/serving-playbook.md`) | 04 media | 05 skills |

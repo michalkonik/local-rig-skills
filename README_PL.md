@@ -52,17 +52,18 @@ każdy model serwowany przez llama-swap, w obu interfejsach czatu, a także agen
 | `/income-weekly-review` | tygodniowa strona z dziennika: liczby na strumień, werdykty zostaw/porzuć według kryteriów z kursu, nadchodzące terminy, Twoje decyzje |
 | `/deal-hunter <status, deals, show, explain, books, start, stop>` | pytanie i sterowanie agentem Deal Hunter (okazje na sprzęt, progi, rozbicie zysku netto, koszty); tylko znajduje okazje, nigdy nie kupuje ani nie pisze do sprzedawców |
 
-**Notatki (OneNote przez Microsoft Graph)**
+**Notatki (Joplin). OneNote jest wycofany; skille OneNote są usunięte.**
 
 | Skill | Co robi |
 |---|---|
-| `/onenote-list` | drzewo notatnik → grupa sekcji → sekcja, albo strony jednej sekcji |
-| `/onenote-read` | szuka stron i wypisuje treść jednej |
-| `/onenote-write` | nowa strona albo dopisek; wysyła tylko z `--apply` |
+| `/joplin-list` | drzewo notatników albo notatki w jednym notatniku |
+| `/joplin-read` | szuka notatek i wypisuje treść jednej |
+| `/joplin-write` | nowy notatnik albo notatka, albo dopisek; wysyła tylko z `--apply` |
+| `/joplin-actions` | zadania (action items) sortowane po terminie; wysyła tylko z `--apply` |
 
-Skrypt to `bin/onenote.py`. Czyta pole `access_token` z pozycji Bitwarden `onenote` (`bw-secret onenote#access_token`). Token musi mieć zakres Graph `Notes.ReadWrite`.
+Skrypt to `bin/joplin.py`. Nie czytaj i nie zapisuj OneNote.
 
-**OneDrive (ten sam token Graph, zakres `Files.ReadWrite`)**
+**OneDrive (token Graph, zakres `Files.ReadWrite`)**
 
 | Skill | Co robi |
 |---|---|
@@ -70,7 +71,7 @@ Skrypt to `bin/onenote.py`. Czyta pole `access_token` z pozycji Bitwarden `oneno
 | `/drive-read` | treść małego pliku tekstowego, albo sam rozmiar gdy to nie tekst |
 | `/drive-write` | wysyłka, nowy folder albo usunięcie jednej rzeczy; wysyła tylko z `--apply` |
 
-Skrypt: `bin/drive.py`. To samo pole Bitwarden. Token skopiowany przed zgodą nie otworzy dysku.
+Skrypt: `bin/drive.py`. Token: pozycja Bitwarden `onenote`, pole `access_token` (`bw-secret onenote#access_token`). Nazwa pozycji to tylko schowek tokenu. Token skopiowany przed zgodą nie otworzy dysku.
 
 **Google Drive (konto `michal.konik.praca@gmail.com`, zakres OAuth `drive`)**
 
