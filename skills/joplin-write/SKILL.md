@@ -17,7 +17,7 @@ description: Use when the user wants a Joplin notebook or note created, or text 
 ## Steps
 1. If the notebook name is unknown, run `/joplin-list` and use the printed title.
 2. New notebook: `$J mkbook --title "TITLE" --apply`. Under another notebook, add `--parent "PARENT"`.
-3. New note: `$J create --notebook "NOTEBOOK" --title "TITLE" --text "BODY" --apply`. Use a Markdown table when the note is a list of rows, and `<span style="color:#b42318">` only for a status word.
+3. New note: `$J create --notebook "NOTEBOOK" --title "TITLE" --text "BODY" --apply`. Use a Markdown table when the note is a list of rows. Do not put HTML in a cell.
 4. Add to a note: `$J append "NOTEBOOK" "TITLE" --text "BODY" --apply`.
 5. If the script exits 10, it did not write. Re-run with `--apply` only if the user asked to save.
 6. If the script prints `ERROR`, stop and report that line.

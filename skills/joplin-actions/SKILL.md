@@ -36,7 +36,7 @@ After prepare, list the open items in the printed order. Mention any AGENT line 
 
 ## Gotchas
 - Joplin's own alarm is not a separate field the script can set. The reminder line records the Google Calendar reminder. Say `Not set` when there is none.
-- The to-do body is a Markdown table, not a rich-text HTML note. Raw HTML shows the tags in the editor and a warning banner in the viewer. The category color is the only HTML span.
+- The to-do body is a Markdown table. Do not put HTML in a table. Joplin shows the tags as text, including on the Mac.
 - Meetings, birthdays, and booked courses stay on Google Calendar. Do not copy them into Actions.
 - Note for agent is the last row of the to-do and the right-hand column of the Actions list. The same column is on Completed Actions.
 - The 6:00 Europe/Warsaw check runs `prepare --apply`, acts on every Note for agent, and leaves a short list before 7:00.
