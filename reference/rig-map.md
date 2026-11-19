@@ -73,4 +73,6 @@ monitoring, OpenClaw, web search, YouTube/X, side income, Deal Hunter, Joplin, O
 | private courses (EN + PL) | `../private-courses/` (contract to company, X/YouTube growth, AI second-order winners, biotech in the age of AI) |
 | Joplin | Notes and action items. Skills `/joplin-list`, `/joplin-read`, `/joplin-write`, `/joplin-actions`. Script `bin/joplin.py`. OneNote is retired. |
 | Gate.io | Read-only API v4. Skills `/gate-balance`, `/gate-transactions`, `/gate-withdrawals`. Script `bin/gate.py`. Bitwarden item `gateio`, fields `key` and `secret`. No orders and no withdrawals are sent. |
+| MEXC | Spot only, read-only. Skills `/mexc-balance`, `/mexc-transactions`, `/mexc-withdrawals`. Script `bin/mexc.py`. Bitwarden item `mexc`, fields `key` and `secret`. No orders and no withdrawals are sent. |
+| OKX | Read-only API v5. Skills `/okx-balance`, `/okx-transactions`, `/okx-withdrawals`. Script `bin/okx.py`. Bitwarden item `okx`, fields `key`, `secret`, and `passphrase`. No orders and no withdrawals are sent. |
 | OneDrive | Graph token in Bitwarden item `onenote`, field `access_token` (scope `Files.ReadWrite`). The item name is only the token store. Skills `/drive-list`, `/drive-read`, `/drive-write`. Do not print the token. |

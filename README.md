@@ -103,6 +103,26 @@ Script: `bin/pko.py`. Secrets: Bitwarden item `enablebanking-pko` (`bw-secret`, 
 
 Script: `bin/gate.py`. Secrets: Bitwarden item `gateio`, fields `key` and `secret` (`bw-secret`, never in git). No orders or transfers.
 
+**MEXC (spot, read only)**
+
+| Skill | What it does |
+|---|---|
+| `/mexc-balance` | spot balances, free and locked |
+| `/mexc-transactions` | spot trades for one symbol and a date range |
+| `/mexc-withdrawals` | withdrawal and deposit history; it does not send a withdrawal |
+
+Script: `bin/mexc.py`. Secrets: Bitwarden item `mexc`, fields `key` and `secret` (`bw-secret`, never in git). No orders or transfers.
+
+**OKX (read only)**
+
+| Skill | What it does |
+|---|---|
+| `/okx-balance` | trading-account and funding-account balances |
+| `/okx-transactions` | account bills, or spot fills when an instrument is named |
+| `/okx-withdrawals` | withdrawal and deposit history; does not send a withdrawal |
+
+Script: `bin/okx.py`. Secrets: Bitwarden item `okx`, fields `key`, `secret`, and `passphrase` (`bw-secret`, never in git). No orders and no withdrawals are sent.
+
 **Budget sheet**
 
 | Skill | What it does |
