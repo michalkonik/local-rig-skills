@@ -103,6 +103,16 @@ Skrypt: `bin/pko.py`. Sekrety: pozycja Bitwarden `enablebanking-pko` (`bw-secret
 
 Skrypt: `bin/gate.py`. Sekrety: pozycja Bitwarden `gateio`, pola `key` i `secret` (`bw-secret`, nigdy w gicie). Bez zleceń i przelewów.
 
+**MEXC (spot, tylko odczyt)**
+
+| Skill | Co robi |
+|---|---|
+| `/mexc-balance` | salda spot, dostępne i zablokowane |
+| `/mexc-transactions` | transakcje spot dla jednej pary i zakresu dat |
+| `/mexc-withdrawals` | historia wypłat i wpłat; nie wysyła wypłaty |
+
+Skrypt: `bin/mexc.py`. Sekrety: pozycja Bitwarden `mexc`, pola `key` i `secret` (`bw-secret`, nigdy w gicie). Bez zleceń i przelewów.
+
 **Arkusz budżetu**
 
 | Skill | Co robi |
