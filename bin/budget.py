@@ -84,7 +84,8 @@ def classify(tx, trips=None):
         return "transfer"
     if amount > 0 and not refund:
         return "income"
-    if "yana" in title or "dla par" in title:
+    # "ryanair" contains the letters "yana". A flight is not the Yana column.
+    if "ryanair" not in title and ("yana" in title or "dla par" in title):
         return "Yana"
     if cat == "donations" or "zrzutka" in title:
         return "Dobry uczynek"
@@ -100,17 +101,28 @@ def classify(tx, trips=None):
     online = any(k in title for k in ("empik", "allegro", "amazon", "olx"))
     if trip and not online:
         return "wydatki w podróży"
-    if any(k in title for k in ("piwo", "alkohol", "wino", "whisky", "wódka", "wodka")):
+    alcohol = (
+        "piwo", "alkohol", "wino", "whisky", "wódka", "wodka", "cocktail", "koktajl",
+        "piekny pies", "piękny pies", "przelom", "przełom", "szklanki",
+    )
+    if any(k in title for k in alcohol):
         return "Alkohol"
-    food_out = ("uber eats", "eats pending", "restauracj", "cafe", "cukrownia", "gospoda", "gastronom", "chef")
+    food_out = (
+        "uber eats", "eats pending", "restauracj", "restaurant", "cafe", "bistro", "ramen",
+        "cukrownia", "gospoda", "gastronom", "chef", "mcdonald", "beef house", "zaczyn",
+    )
     if cat == "eating_out" or any(k in title for k in food_out):
         return "Jedzenie zamawiane i na mieście"
     if cat == "groceries" or any(k in title for k in ("biedronka", "żabka", "zabka", "lidl", "carrefour", "auchan", "piernik")):
         return "Produkty spożywcze"
     if cat == "travel" or any(k in title for k in ("easyjet", "ryanair", "wizz", "airbnb", "booking.com")):
         return "wydatki w podróży"
-    ride = ("bolt", "uber", "intercity", "pkp", "circle k", "jet wash", "uber.com")
-    if cat == "transport" or any(k in title for k in ride):
+    ride = (
+        "bolt", "uber", "intercity", "pkp", "circle k", "jet wash", "uber.com",
+        "parking", "car hire", "discover cars", "discover card", "orlen", "shell",
+        "lotos", "kasownik",
+    )
+    if cat == "transport" or any(k in title for k in ride) or re.search(r"\bbp\b", title):
         return "Transport"
     return "Reszta"
 
@@ -717,6 +729,25 @@ def selftest():
     assert label_of({"title": "CAFE LISBOA 01", "counterparty": "Cafe Lisboa", "counterpartyFromTitle": True}) == "Cafe Lisboa"
     assert label_of({"title": "Zettle_*JAN KOWAL", "counterparty": "Zettle", "counterpartyFromTitle": True}) == "Zettle Jan Kowal"
     assert classify({"title": "UBER * EATS", "amount": "-10", "category": "eating_out"}) == "Jedzenie zamawiane i na mieście"
+    assert classify({"title": "BISTRO FIU FIU KRAKOW", "amount": "-70"}) == "Jedzenie zamawiane i na mieście"
+    assert classify({"title": "ZACZYN KRAKOW", "amount": "-14"}) == "Jedzenie zamawiane i na mieście"
+    assert classify({"title": "MCDONALDS 415 POZNAN", "amount": "-13"}) == "Jedzenie zamawiane i na mieście"
+    assert classify({"title": "BEEF HOUSE Poznan", "amount": "-46"}) == "Jedzenie zamawiane i na mieście"
+    assert classify({"title": "Kinki Ramen", "amount": "-134"}) == "Jedzenie zamawiane i na mieście"
+    assert classify({"title": "TDM RAK RESTAURANT", "amount": "-52"}) == "Jedzenie zamawiane i na mieście"
+    assert classify({"title": "PIEKNY PIES Krakow", "amount": "-36"}) == "Alkohol"
+    assert classify({"title": "PRZELOM - LISTENING CA", "amount": "-38"}) == "Alkohol"
+    assert classify({"title": "SZKLANKI 01 Krakow", "amount": "-42"}) == "Alkohol"
+    assert classify({"title": "Cocktail Atelier", "amount": "-20"}) == "Alkohol"
+    assert classify({"title": "Parking BdPN Wolosate", "amount": "-30"}) == "Transport"
+    assert classify({"title": "ET CAR HIRE BUCHAREST", "amount": "-59"}) == "Transport"
+    assert classify({"title": "Discover Cars Riga", "amount": "-273"}) == "Transport"
+    assert classify({"title": "Discover Card Riga", "amount": "-273"}) == "Transport"
+    assert classify({"title": "BP OLIMPIA 471", "amount": "-282"}) == "Transport"
+    assert classify({"title": "ORLEN 25 Krakow", "amount": "-79"}) == "Transport"
+    assert classify({"title": "KASOWNIK ZTP KRAKOW", "amount": "-8"}) == "Transport"
+    assert classify({"title": "RYANAIR DUBLIN", "amount": "-35"}) == "wydatki w podróży"
+    assert classify({"title": "MICHAL I YANA - TERAPIA", "amount": "-350"}) == "Yana"
     assert classify({"title": "SPLATA KARTY", "amount": "-12000", "category": "transport"}) == "transfer"
     assert classify({"title": "MICHAL I YANA - TERAPIA", "amount": "-350", "category": "people"}) == "Yana"
     assert classify({"title": "Przelew środków", "amount": "7000", "category": "income"}) == "income"
@@ -727,6 +758,8 @@ def selftest():
     assert classify({"date": "2026-10-05", "title": "GOOGLE *YouTubePremium", "amount": "-10", "category": "entertainment"}, trips) == "Opłaty cykliczne"
     assert classify({"date": "2026-10-04", "title": "REVOLUT**0102*", "amount": "-10", "category": "other"}, trips) == "Reszta"
     assert classify({"date": "2026-10-05", "title": "ZABKA", "amount": "-4", "category": "groceries"}, trips) == "wydatki w podróży"
+    assert classify({"date": "2026-10-05", "title": "BISTRO FIU FIU", "amount": "-10"}, trips) == "wydatki w podróży"
+    assert classify({"date": "2026-10-05", "title": "BP OLIMPIA", "amount": "-10"}, trips) == "wydatki w podróży"
     assert describe({"date": "2026-10-05", "title": "ZABKA Z1", "amount": "-4", "category": "groceries", "source": "mbank"}, "Paris").endswith("żabka [mbank]")
     sample = [
         {"date": "2026-10-02", "amount": "-4.00", "title": "ZABKA", "category": "groceries", "source": "mbank", "counterpartyFromTitle": True},
