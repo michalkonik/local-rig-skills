@@ -80,8 +80,9 @@ Script: `bin/drive.py`. Token: Bitwarden item `onenote`, field `access_token` (`
 | `/gdrive-list` | list one My Drive folder, or search by name |
 | `/gdrive-read` | preview a Doc or small text file, or download (Sheets as xlsx, Docs as docx) |
 | `/gdrive-write` | upload, replace a Doc/Sheet, write cells, create a folder, or trash one item; sends only with `--apply` |
+| `/gdrive-sheets` | create a spreadsheet, add, rename, or remove a tab, append rows, or send any other Sheets batch; sends only with `--apply` |
 
-Script: `bin/gdrive.py`. Token: `~/Documents/keep/gmail-tokens.json`. Not the OneDrive script. Cell writes need the Sheets API enabled on the OAuth project.
+Script: `bin/gdrive.py`. Token: `~/Documents/keep/gmail-tokens.json`. Not the OneDrive script. Cell writes and tab changes need the Sheets API enabled on the OAuth project. `sheet-batch` sends any `batchUpdate` request, so a missing named command is not a reason to refuse.
 
 **PKO (Enable Banking, read only)**
 

@@ -30,6 +30,7 @@ description: Use when the user wants a Google Drive file read or downloaded ("re
 - Google export fails above 10 MB. Say so; do not invent the contents.
 - Do not paste a large private file into the chat. Give the path and a short preview.
 - `sheet-get` needs the Sheets API. If ERROR says the API is disabled, stop and report that line.
+- Tab names are `$G sheet-tabs "<id>"`. Creating or changing a tab is `/gdrive-sheets`.
 
 ## Before you finish
 - [ ] the preview came from the script or the saved file

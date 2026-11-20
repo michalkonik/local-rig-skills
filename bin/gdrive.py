@@ -2,8 +2,8 @@
 """Google Drive for michal.konik.praca@gmail.com.
 
 Token: ~/Documents/keep/gmail-tokens.json (scope drive) plus the OAuth client
-JSON next to it. Never print either file. upload, replace, mkdir, sheet-set,
-and trash do nothing unless --apply is set.
+JSON next to it. Never print either file. Creating files, tabs, cell writes,
+batch updates, and trash do nothing unless --apply is set.
 """
 import argparse, json, mimetypes, os, pathlib, sys, time, urllib.error, urllib.parse, urllib.request
 
@@ -552,6 +552,159 @@ def cmd_sheet_set(args):
     print(f"OK sheet-set {item.get('name')} | {data.get('updatedRange')} | cells {data.get('updatedCells')}")
 
 
+def require_sheet(item):
+    found = resolve(item)
+    if found.get("mimeType") != SHEET:
+        say(f"ERROR not a Google Sheet: {found.get('name')}", 3)
+    return found
+
+
+def sheet_pages(item):
+    data = api("GET", f"{SHEETS}/{item['id']}",
+               {"fields": "spreadsheetId,properties.title,sheets.properties"})
+    pages = [(row.get("properties") or {}) for row in data.get("sheets") or []]
+    return data, pages
+
+
+def find_tab(pages, name):
+    hits = [page for page in pages if page.get("title") == name]
+    if not hits:
+        titles = ", ".join(page.get("title") or "?" for page in pages) or "(none)"
+        say(f"ERROR no tab named {name}. Tabs: {titles}", 3)
+    if len(hits) > 1:
+        say(f"ERROR more than one tab named {name}", 3)
+    return hits[0]
+
+
+def refuse_only_tab(pages):
+    if len(pages) <= 1:
+        say("ERROR refusing to delete the only tab", 3)
+
+
+def cmd_sheet_create(args):
+    name = args.name.strip().strip("/")
+    if not name or "/" in name:
+        say("ERROR --name must be one spreadsheet name", 2)
+    print(f"PLAN sheet-create {name}")
+    if not args.apply:
+        say("OK not sent. Re-run with --apply to create the spreadsheet.", 10)
+    made = api("POST", API + "/files", body={
+        "name": name, "mimeType": SHEET, "parents": [parent_id(args.parent)]},
+               query={"fields": FIELDS})
+    print(f"OK sheet-create {made.get('name')} | {made.get('id')}")
+
+
+def cmd_sheet_tabs(args):
+    item = require_sheet(args.item)
+    data, pages = sheet_pages(item)
+    title = (data.get("properties") or {}).get("title") or item.get("name")
+    print(f"OK tabs {title} | {item.get('id')} | {len(pages)}")
+    for page in pages:
+        print(f"- {page.get('index')} {page.get('title')} | {page.get('sheetId')}")
+
+
+def cmd_sheet_add_tab(args):
+    name = args.name.strip()
+    if not name:
+        say("ERROR --name is required", 2)
+    print(f"PLAN sheet-add-tab {args.item} {name}")
+    if not args.apply:
+        say("OK not sent. Re-run with --apply to add the tab.", 10)
+    item = require_sheet(args.item)
+    props = {"title": name}
+    if args.index is not None:
+        props["index"] = args.index
+    api("POST", f"{SHEETS}/{item['id']}:batchUpdate",
+        body={"requests": [{"addSheet": {"properties": props}}]})
+    print(f"OK sheet-add-tab {item.get('name')} | {name}")
+
+
+def cmd_sheet_rename_tab(args):
+    print(f"PLAN sheet-rename-tab {args.item} {args.old} -> {args.new}")
+    if not args.apply:
+        say("OK not sent. Re-run with --apply to rename the tab.", 10)
+    item = require_sheet(args.item)
+    _, pages = sheet_pages(item)
+    tab = find_tab(pages, args.old)
+    api("POST", f"{SHEETS}/{item['id']}:batchUpdate", body={"requests": [{
+        "updateSheetProperties": {
+            "properties": {"sheetId": tab.get("sheetId"), "title": args.new},
+            "fields": "title",
+        }
+    }]})
+    print(f"OK sheet-rename-tab {item.get('name')} | {args.old} -> {args.new}")
+
+
+def cmd_sheet_delete_tab(args):
+    print(f"PLAN sheet-delete-tab {args.item} {args.name}")
+    if not args.apply:
+        say("OK not sent. Re-run with --apply to delete the tab.", 10)
+    item = require_sheet(args.item)
+    _, pages = sheet_pages(item)
+    refuse_only_tab(pages)
+    tab = find_tab(pages, args.name)
+    api("POST", f"{SHEETS}/{item['id']}:batchUpdate",
+        body={"requests": [{"deleteSheet": {"sheetId": tab.get("sheetId")}}]})
+    print(f"OK sheet-delete-tab {item.get('name')} | {args.name}")
+
+
+def cmd_sheet_append(args):
+    values = parse_values(args)
+    print(f"PLAN sheet-append {args.item} {args.range} rows {len(values)}")
+    if not args.apply:
+        say("OK not sent. Re-run with --apply to append rows.", 10)
+    item = require_sheet(args.item)
+    rng = urllib.parse.quote(args.range, safe="")
+    data = api("POST", f"{SHEETS}/{item['id']}/values/{rng}:append",
+               query={"valueInputOption": "USER_ENTERED", "insertDataOption": "INSERT_ROWS"},
+               body={"range": args.range, "majorDimension": "ROWS", "values": values})
+    updated = data.get("updates") or {}
+    print(f"OK sheet-append {item.get('name')} | {updated.get('updatedRange')} | cells {updated.get('updatedCells')}")
+
+
+def cmd_sheet_clear(args):
+    print(f"PLAN sheet-clear {args.item} {args.range}")
+    if not args.apply:
+        say("OK not sent. Re-run with --apply to clear the range.", 10)
+    item = require_sheet(args.item)
+    rng = urllib.parse.quote(args.range, safe="")
+    api("POST", f"{SHEETS}/{item['id']}/values/{rng}:clear", body={})
+    print(f"OK sheet-clear {item.get('name')} | {args.range}")
+
+
+def load_requests(path):
+    src = pathlib.Path(path).expanduser()
+    if not src.is_file():
+        say(f"ERROR file not found: {src}", 3)
+    assert_safe(src)
+    try:
+        body = json.loads(src.read_text())
+    except json.JSONDecodeError:
+        say("ERROR --file must be JSON", 2)
+    if isinstance(body, list):
+        requests = body
+    elif isinstance(body, dict) and isinstance(body.get("requests"), list):
+        requests = body["requests"]
+    else:
+        say('ERROR JSON must be a list of requests or {"requests": [...]}', 2)
+    if not requests:
+        say("ERROR no requests in the file", 2)
+    if any(not isinstance(row, dict) or len(row) != 1 for row in requests):
+        say("ERROR each request must be one object with one operation", 2)
+    return requests
+
+
+def cmd_sheet_batch(args):
+    requests = load_requests(args.file)
+    kinds = ", ".join(next(iter(row)) for row in requests)
+    print(f"PLAN sheet-batch {args.item} {len(requests)} {kinds}")
+    if not args.apply:
+        say("OK not sent. Re-run with --apply to send the batch.", 10)
+    item = require_sheet(args.item)
+    api("POST", f"{SHEETS}/{item['id']}:batchUpdate", body={"requests": requests})
+    print(f"OK sheet-batch {item.get('name')} | {item.get('id')} | requests {len(requests)}")
+
+
 def cmd_trash(args):
     print(f"PLAN trash {args.item}")
     if not args.apply:
@@ -602,6 +755,44 @@ def selftest():
         except GiveUp as exc:
             assert exc.code == 10
         assert calls == []
+        try:
+            cmd_sheet_create(argparse.Namespace(name="Book", parent="", apply=False))
+        except GiveUp as exc:
+            assert exc.code == 10
+        try:
+            cmd_sheet_add_tab(argparse.Namespace(item="abc", name="Tab", index=None, apply=False))
+        except GiveUp as exc:
+            assert exc.code == 10
+        try:
+            cmd_sheet_rename_tab(argparse.Namespace(item="abc", old="A", new="B", apply=False))
+        except GiveUp as exc:
+            assert exc.code == 10
+        try:
+            cmd_sheet_delete_tab(argparse.Namespace(item="abc", name="A", apply=False))
+        except GiveUp as exc:
+            assert exc.code == 10
+        try:
+            cmd_sheet_append(argparse.Namespace(item="abc", range="Tab!A1", value=None, values='[["a",1]]', apply=False))
+        except GiveUp as exc:
+            assert exc.code == 10
+        try:
+            cmd_sheet_clear(argparse.Namespace(item="abc", range="Tab!A1:B2", apply=False))
+        except GiveUp as exc:
+            assert exc.code == 10
+        batch = pathlib.Path("/tmp/gdrive-sheet-batch-selftest.json")
+        batch.write_text('[{"updateSheetProperties":{"properties":{"sheetId":1,"title":"B"},"fields":"title"}}]')
+        try:
+            cmd_sheet_batch(argparse.Namespace(item="abc", file=str(batch), apply=False))
+        except GiveUp as exc:
+            assert exc.code == 10
+        batch.unlink(missing_ok=True)
+        assert calls == []
+        try:
+            refuse_only_tab([{"title": "Only"}])
+            raise AssertionError("only tab was deletable")
+        except GiveUp as exc:
+            assert exc.code == 3
+        refuse_only_tab([{"title": "A"}, {"title": "B"}])
         try:
             cmd_upload(argparse.Namespace(file=str(TOKENS), parent="", name=None, apply=True))
             raise AssertionError("secret upload was allowed")
@@ -666,6 +857,40 @@ def build():
     a.add_argument("--range", required=True)
     a.add_argument("--value")
     a.add_argument("--values")
+    a.add_argument("--apply", action="store_true")
+    a = add("sheet-create", cmd_sheet_create)
+    a.add_argument("--name", required=True)
+    a.add_argument("--parent", default="")
+    a.add_argument("--apply", action="store_true")
+    a = add("sheet-tabs", cmd_sheet_tabs)
+    a.add_argument("item")
+    a = add("sheet-add-tab", cmd_sheet_add_tab)
+    a.add_argument("item")
+    a.add_argument("--name", required=True)
+    a.add_argument("--index", type=int)
+    a.add_argument("--apply", action="store_true")
+    a = add("sheet-rename-tab", cmd_sheet_rename_tab)
+    a.add_argument("item")
+    a.add_argument("--old", required=True)
+    a.add_argument("--new", required=True)
+    a.add_argument("--apply", action="store_true")
+    a = add("sheet-delete-tab", cmd_sheet_delete_tab)
+    a.add_argument("item")
+    a.add_argument("--name", required=True)
+    a.add_argument("--apply", action="store_true")
+    a = add("sheet-append", cmd_sheet_append)
+    a.add_argument("item")
+    a.add_argument("--range", required=True)
+    a.add_argument("--value")
+    a.add_argument("--values")
+    a.add_argument("--apply", action="store_true")
+    a = add("sheet-clear", cmd_sheet_clear)
+    a.add_argument("item")
+    a.add_argument("--range", required=True)
+    a.add_argument("--apply", action="store_true")
+    a = add("sheet-batch", cmd_sheet_batch)
+    a.add_argument("item")
+    a.add_argument("--file", required=True)
     a.add_argument("--apply", action="store_true")
     a = add("trash", cmd_trash)
     a.add_argument("item")

@@ -30,6 +30,7 @@ If nothing was sent: `Not sent. <the PLAN line>`
 ## Gotchas
 - Replacing a Google Sheet or Doc keeps that type and adds a revision. It does not create a second file.
 - `sheet-set` needs the Sheets API. If ERROR says it is disabled, stop. Do not fall back to CSV.
+- New spreadsheets, tabs, appended rows, and any other Sheets change are `/gdrive-sheets`, not this skill.
 - Docs have no one-paragraph edit here. Download `.docx` with `/gdrive-read`, then `replace`.
 - Trash can be restored from the Drive bin. This command does not permanently delete.
 
