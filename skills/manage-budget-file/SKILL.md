@@ -36,13 +36,25 @@ Budżet 2026 | <id or link>
 Manual rows: type an amount and a description in an empty cell. Do not use the [mbank] or [pko] tag. The yellow B1 cell is the monthly budget.
 ```
 
+## Categories
+`bin/budget.py` chooses the column. When a shop keeps landing in the wrong one, extend `classify` there and add a `selftest` assert. Do not add an eleventh column.
+
+A trip day is applied before these shop rules, so the same shop stays in `wydatki w podróży` on a trip. Subscriptions, therapy, donations, and Revolut top-ups stay out of the trip column.
+
+- Eating out: restaurant, bistro, ramen, cafe, McDonald's, Beef House, Zaczyn.
+- Alcohol: piwo, wino, whisky, cocktail, Piękny Pies, Przełom, Szklanki.
+- Transport: Uber, Bolt, PKP, kasownik, parking, car hire, Discover Cars, petrol (BP, Orlen, Circle K, Shell, Lotos).
+- Ryanair is a flight (`wydatki w podróży`), never Yana. The letters "yana" sit inside "ryanair".
+- Card repayment (`spłata karty`, or PKO `SPŁATA NALEŻNOŚCI`) sits below the total. It is not spending and not income.
+
 ## Gotchas
 - Empty rows under each category are for the user. The SUM line includes them.
-- Replacing the whole file drops manual rows and a changed B1 unless they were copied back in first.
+- Replacing the whole file drops manual rows and a changed B1 unless they were copied back in first. A Google Sheet download stores text in shared strings, so `budget.py manual` can report none. Read the description cells yourself before a replace.
 - Each category is three columns: data, kwota, opis. The date is not repeated in the description.
 - A calendar trip moves that day's spend into `wydatki w podróży`, except subscriptions, therapy, donations, and Revolut top-ups. Grocery labels stay the chain name.
 - Rows tagged `[stałe]` are the housing lines. The builder adds them. Do not treat them as manual.
 - PKO purchases are missing until `pko.py session` exists. Do not invent them from mBank card repayments.
+- PKO amounts are often positive with a `DBIT` or `CRDT` marker. `DBIT` is money out. A `CRDT` marked `RETURN` is a refund. A `CRDT` marked `SPŁATA NALEŻNOŚCI` is the card repayment, not income.
 
 ## Before you finish
 - [ ] the sheet link came from an OK upload or replace line
