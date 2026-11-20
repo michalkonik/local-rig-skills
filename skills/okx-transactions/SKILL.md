@@ -1,6 +1,6 @@
 ---
 name: okx-transactions
-description: Use when the user wants OKX account bills or spot fills for a date range. Read only. Not the balance - use /okx-balance. Not withdrawals - use /okx-withdrawals. Input - from, to, and an instrument for fills.
+description: Use when the user wants OKX account bills or spot fills for a date range. Read only. European account at eea.okx.com. Not the balance - use /okx-balance. Not withdrawals - use /okx-withdrawals. Input - from, to, and an instrument for fills.
 ---
 # /okx-transactions
 **Goal:** list OKX account bills, or spot fills when an instrument is named. **Input:** `from` and `to` as `YYYY-MM-DD`. Fills also need an instrument such as `BTC-USDT`. **Output:** the reply template.
@@ -30,6 +30,7 @@ OKX fills <instrument> <from> to <to>
 - Empty output for a valid range is a real result. Say none. Do not widen the range.
 - The script walks the range in 7-day windows.
 - Instrument ids use a hyphen, as in `BTC-USDT`, not `BTCUSDT`.
+- This account is European. The script calls `https://eea.okx.com`. Do not point it at `www.okx.com`.
 
 ## Before you finish
 - [ ] the dates and instrument are what the user asked for

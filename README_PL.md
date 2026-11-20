@@ -121,7 +121,7 @@ Skrypt: `bin/mexc.py`. Sekrety: pozycja Bitwarden `mexc`, pola `key` i `secret` 
 | `/okx-transactions` | historia rachunku, a transakcje gdy podano instrument |
 | `/okx-withdrawals` | historia wypłat i wpłat; nie wysyła wypłaty |
 
-Skrypt: `bin/okx.py`. Sekrety: pozycja Bitwarden `okx`, pola `key`, `secret` i `passphrase` (`bw-secret`, nigdy w gicie). Bez zleceń i przelewów.
+Skrypt: `bin/okx.py`. Host: `https://eea.okx.com`. `www.okx.com` zwraca `50119` dla tego konta. Sekrety: pozycja Bitwarden `okx`, pola `key`, `secret` i `passphrase` (`bw-secret`, nigdy w gicie). Bez zleceń i przelewów.
 
 **Arkusz budżetu**
 

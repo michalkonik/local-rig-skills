@@ -6,7 +6,7 @@ Never print the key, secret, passphrase, or signature. No orders, transfers, or 
 import argparse, base64, datetime, hashlib, hmac, json, os, re, subprocess, sys, urllib.error, urllib.parse, urllib.request
 from zoneinfo import ZoneInfo
 
-API = "https://eea.okx.com"
+API = "https://eea.okx.com"  # European account. www.okx.com returns 50119 for this key.
 ITEM = "okx"
 WARSAW = ZoneInfo("Europe/Warsaw")
 WINDOW_MS = 7 * 86400 * 1000
