@@ -80,8 +80,9 @@ Skrypt: `bin/drive.py`. Token: pozycja Bitwarden `onenote`, pole `access_token` 
 | `/gdrive-list` | lista jednego folderu Mojego dysku albo szukanie po nazwie |
 | `/gdrive-read` | podgląd Dokumentu lub małego pliku tekstowego, albo pobranie (Arkusze jako xlsx, Dokumenty jako docx) |
 | `/gdrive-write` | wysyłka, podmiana Dokumentu/Arkusza, zapis komórek, nowy folder albo kosz; wysyła tylko z `--apply` |
+| `/gdrive-sheets` | nowy arkusz, nowa, zmieniona albo usunięta karta, dopisanie wierszy albo dowolna zmiana Sheets; wysyła tylko z `--apply` |
 
-Skrypt: `bin/gdrive.py`. Token: `~/Documents/keep/gmail-tokens.json`. To nie jest skrypt OneDrive. Zapis komórek wymaga włączonego Sheets API w projekcie OAuth.
+Skrypt: `bin/gdrive.py`. Token: `~/Documents/keep/gmail-tokens.json`. To nie jest skrypt OneDrive. Zapis komórek i kart wymaga włączonego Sheets API w projekcie OAuth. `sheet-batch` wysyła dowolne żądanie `batchUpdate`, więc brak nazwanej komendy nie jest powodem odmowy.
 
 **PKO (Enable Banking, tylko odczyt)**
 
