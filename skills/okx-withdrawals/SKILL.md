@@ -1,6 +1,6 @@
 ---
 name: okx-withdrawals
-description: Use when the user wants OKX withdrawal or deposit history. Read only. Does not send a withdrawal. Not the balance - use /okx-balance. Input - from and to dates.
+description: Use when the user wants OKX withdrawal or deposit history. Read only. European account at eea.okx.com. Does not send a withdrawal. Not the balance - use /okx-balance. Input - from and to dates.
 ---
 # /okx-withdrawals
 **Goal:** list OKX withdrawals and deposits for a date range. **Input:** `from` and `to` as `YYYY-MM-DD`, and whether they asked for withdrawals, deposits, or both. **Output:** the reply template.
@@ -30,6 +30,7 @@ OKX deposits <from> to <to>
 - Empty output for a valid range is a real result. Say none. Do not widen the range.
 - The printed address and transaction id are masked. Do not reconstruct them.
 - State is the exchange code. Do not translate it unless the script did.
+- This account is European. The script calls `https://eea.okx.com`. Do not point it at `www.okx.com`.
 
 ## Before you finish
 - [ ] no withdrawal was sent

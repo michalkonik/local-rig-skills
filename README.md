@@ -121,7 +121,7 @@ Script: `bin/mexc.py`. Secrets: Bitwarden item `mexc`, fields `key` and `secret`
 | `/okx-transactions` | account bills, or spot fills when an instrument is named |
 | `/okx-withdrawals` | withdrawal and deposit history; does not send a withdrawal |
 
-Script: `bin/okx.py`. Secrets: Bitwarden item `okx`, fields `key`, `secret`, and `passphrase` (`bw-secret`, never in git). No orders and no withdrawals are sent.
+Script: `bin/okx.py`. Host: `https://eea.okx.com`. `www.okx.com` returns `50119` for this account. Secrets: Bitwarden item `okx`, fields `key`, `secret`, and `passphrase` (`bw-secret`, never in git). No orders and no withdrawals are sent.
 
 **Budget sheet**
 

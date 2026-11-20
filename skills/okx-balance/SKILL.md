@@ -1,6 +1,6 @@
 ---
 name: okx-balance
-description: Use when the user asks for the OKX balance or how much of a coin is on OKX. Read only. Not Gate or MEXC. Not history - use /okx-transactions. Input - optional currency.
+description: Use when the user asks for the OKX balance or how much of a coin is on OKX. Read only. European account at eea.okx.com. Not Gate or MEXC. Not history - use /okx-transactions. Input - optional currency.
 ---
 # /okx-balance
 **Goal:** report OKX trading-account and funding-account balances. **Input:** optional currency such as USDT. **Output:** the reply template. Nothing is written to disk.
@@ -26,6 +26,7 @@ OKX funding
 ## Gotchas
 - Zero balances are hidden. Each OK line says how many currencies were returned.
 - Trading and funding are separate. Report both.
+- This account is European. The script calls `https://eea.okx.com`. `50119` from `www.okx.com` means the wrong host, not a missing key. Do not change the host.
 - `50104` means the OKX passphrase is not stored. Ask for it. Do not invent a balance.
 - A missing `User-Agent` makes OKX return Cloudflare `1010`. The script sends one.
 
