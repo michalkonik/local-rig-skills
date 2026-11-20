@@ -124,6 +124,14 @@ Skrypt: `bin/mexc.py`. Sekrety: pozycja Bitwarden `mexc`, pola `key` i `secret` 
 
 Skrypt: `bin/okx.py`. Host: `https://eea.okx.com`. `www.okx.com` zwraca `50119` dla tego konta. Sekrety: pozycja Bitwarden `okx`, pola `key`, `secret` i `passphrase` (`bw-secret`, nigdy w gicie). Bez zleceń i przelewów.
 
+**KSeF (Firehorse IT Consulting, odczyt i pobieranie)**
+
+| Skill | Co robi |
+|---|---|
+| `/ksef-invoices` | lista albo pobranie XML e-faktur; `sales` to faktury wystawione, `costs` to faktury otrzymane; nie wystawia faktury |
+
+Skrypt: `bin/ksef.py`. Sekrety: pozycja Bitwarden `ksef`, pola `token` i `nip` (`bw-secret`, nigdy w gicie). Pliki już na dysku są pomijane. Domyślny katalog to `~/Documents/ksef/6891205697`.
+
 **Arkusz budżetu**
 
 | Skill | Co robi |

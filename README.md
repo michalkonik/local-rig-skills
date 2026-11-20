@@ -124,6 +124,14 @@ Script: `bin/mexc.py`. Secrets: Bitwarden item `mexc`, fields `key` and `secret`
 
 Script: `bin/okx.py`. Host: `https://eea.okx.com`. `www.okx.com` returns `50119` for this account. Secrets: Bitwarden item `okx`, fields `key`, `secret`, and `passphrase` (`bw-secret`, never in git). No orders and no withdrawals are sent.
 
+**KSeF (Firehorse IT Consulting, read and download)**
+
+| Skill | What it does |
+|---|---|
+| `/ksef-invoices` | list or download e-invoice XML; `sales` are issued invoices, `costs` are received invoices; does not issue an invoice |
+
+Script: `bin/ksef.py`. Secrets: Bitwarden item `ksef`, fields `token` and `nip` (`bw-secret`, never in git). Files already on disk are skipped. Output defaults to `~/Documents/ksef/6891205697`.
+
 **Budget sheet**
 
 | Skill | What it does |
