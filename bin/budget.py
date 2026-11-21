@@ -4,7 +4,9 @@
 One sheet per month. Ten categories, each with date, amount, and description.
 Row 1 is the editable budget (default 9000) and what is left. Bank rows end
 with [mbank] or [pko]. Fixed housing rows end with [stałe]. Other filled rows
-are manual and must be kept. A Log sheet records the last covered bank date.
+are manual and must be kept. A later build with --keep keeps a renamed
+description and a category the user moved. A Log sheet records the last
+covered bank date.
 Card repayments sit below the total. Stdlib only.
 """
 import argparse, datetime, json, re, zipfile
@@ -699,6 +701,212 @@ def _load_trips(path):
     return data
 
 
+TAG_RE = re.compile(r"\[(mbank|pko|stałe)\]\s*$")
+MONTHS = {
+    "styczeń": 1, "luty": 2, "marzec": 3, "kwiecień": 4, "maj": 5, "czerwiec": 6,
+    "lipiec": 7, "sierpień": 8, "wrzesień": 9, "październik": 10, "listopad": 11, "grudzień": 12,
+}
+
+
+def _tag(text):
+    match = TAG_RE.search(text or "")
+    return match.group(1) if match else None
+
+
+def _as_date(text):
+    text = (text or "").strip()
+    if re.fullmatch(r"\d{4}-\d{2}-\d{2}.*", text):
+        return text[:10]
+    try:
+        serial = float(text)
+    except (TypeError, ValueError):
+        return text
+    if 20000 < serial < 80000:
+        return (datetime.date(1899, 12, 30) + datetime.timedelta(days=int(serial))).isoformat()
+    return text
+
+
+def _as_amount(text):
+    try:
+        return round(float(text), 2)
+    except (TypeError, ValueError):
+        return None
+
+
+def _month_key_from_title(name):
+    parts = (name or "").split()
+    if len(parts) == 2 and parts[1].isdigit() and parts[0].casefold() in MONTHS:
+        return f"{int(parts[1]):04d}-{MONTHS[parts[0].casefold()]:02d}"
+    return None
+
+
+def _cell_map(root, shared):
+    cells = {}
+    for node in root.iter("{%s}c" % NS):
+        ref = node.attrib.get("r")
+        match = re.fullmatch(r"([A-Z]+)(\d+)", ref or "")
+        if not match:
+            continue
+        col = 0
+        for ch in match.group(1):
+            col = col * 26 + ord(ch) - 64
+        kind = node.attrib.get("t")
+        if kind == "inlineStr":
+            value = "".join(item.text or "" for item in node.iter("{%s}t" % NS))
+        else:
+            raw_node = node.find("{%s}v" % NS)
+            raw = raw_node.text if raw_node is not None and raw_node.text else ""
+            if kind == "s" and raw.isdigit():
+                index = int(raw)
+                value = shared[index] if index < len(shared) else ""
+            else:
+                value = raw
+        cells[(col, int(match.group(2)))] = value
+    return cells
+
+
+def _shared_strings(zf):
+    import xml.etree.ElementTree as ET
+    if "xl/sharedStrings.xml" not in zf.namelist():
+        return []
+    root = ET.fromstring(zf.read("xl/sharedStrings.xml"))
+    return ["".join(node.text or "" for node in item.iter("{%s}t" % NS)) for item in root.findall("{%s}si" % NS)]
+
+
+def _sheet_targets(zf):
+    import xml.etree.ElementTree as ET
+    book = ET.fromstring(zf.read("xl/workbook.xml"))
+    rels = ET.fromstring(zf.read("xl/_rels/workbook.xml.rels"))
+    targets = {rel.attrib.get("Id"): rel.attrib.get("Target") or "" for rel in rels}
+    rid = "{http://schemas.openxmlformats.org/officeDocument/2006/relationships}id"
+    found = []
+    for node in book.iter("{%s}sheet" % NS):
+        target = targets.get(node.attrib.get(rid), "")
+        if target and not target.startswith("xl/"):
+            target = "xl/" + target.lstrip("/")
+        found.append((node.attrib.get("name") or "", target))
+    return found
+
+
+def _take_rows(cells, columns, start=5):
+    rows = []
+    last = max((row for _col, row in cells), default=4)
+    for row in range(start, last + 1):
+        date, amount, text = (cells.get((col, row), "") for col in columns)
+        if text == "SUM":
+            break
+        if text in {"", "opis", "Przychody"} or text.startswith("Spłata"):
+            continue
+        value = _as_amount(amount)
+        if value is None or not str(text).strip():
+            continue
+        rows.append((_as_date(str(date)), value, str(text).strip()))
+    return rows
+
+
+def read_kept(path):
+    """Read placed rows from a previous workbook, including a Google Sheet download."""
+    import xml.etree.ElementTree as ET
+    kept = {}
+    with zipfile.ZipFile(path) as zf:
+        shared = _shared_strings(zf)
+        for name, target in _sheet_targets(zf):
+            key = _month_key_from_title(name)
+            if key is None or target not in zf.namelist():
+                continue
+            cells = _cell_map(ET.fromstring(zf.read(target)), shared)
+            bucket = {cat: [] for cat in list(CATS) + ["income", "transfer"]}
+            for index, cat in enumerate(CATS):
+                base = index * 3 + 1
+                bucket[cat] = _take_rows(cells, (base, base + 1, base + 2))
+            income_at = next((row for (col, row), value in cells.items() if col == 1 and value == "Przychody"), None)
+            if income_at is not None:
+                bucket["income"] = _take_rows(cells, (1, 2, 3), income_at + 1)
+            transfer_at = next((row for (col, row), value in cells.items() if col == 1 and str(value).startswith("Spłata karty")), None)
+            if transfer_at is not None:
+                bucket["transfer"] = _take_rows(cells, (1, 2, 3), transfer_at + 1)
+            kept[key] = bucket
+    return kept
+
+
+def apply_kept(grouped, kept):
+    """Keep a user's description and category when the date, amount, and tag match."""
+    for month, fresh in grouped.items():
+        old = kept.get(month)
+        if old:
+            _apply_month(fresh, old)
+    return grouped
+
+
+def _indexed(bucket):
+    rows = []
+    for cat in list(CATS) + ["income", "transfer"]:
+        for date, amount, text in bucket.get(cat, []):
+            rows.append({"cat": cat, "date": _as_date(str(date)), "amount": _as_amount(amount), "text": str(text), "tag": _tag(text)})
+    return rows
+
+
+def _unique_pairs(generated, kept_rows, used_g, used_k, pred):
+    found = []
+    for gi, generated_row in enumerate(generated):
+        if gi in used_g:
+            continue
+        hits = [ki for ki, kept_row in enumerate(kept_rows) if ki not in used_k and pred(generated_row, kept_row)]
+        if len(hits) != 1:
+            continue
+        ki = hits[0]
+        reverse = [gj for gj, other in enumerate(generated) if gj not in used_g and pred(other, kept_rows[ki])]
+        if len(reverse) == 1:
+            found.append((gi, ki))
+    return found
+
+
+def _apply_month(fresh, old):
+    generated = _indexed(fresh)
+    kept_rows = [row for row in _indexed(old) if row["text"] not in {"SUM", "data", "kwota", "opis"} and row["amount"] is not None]
+    used_g, used_k, pairs = set(), set(), []
+
+    def consume(pred):
+        for gi, ki in _unique_pairs(generated, kept_rows, used_g, used_k, pred):
+            if gi in used_g or ki in used_k:
+                continue
+            used_g.add(gi)
+            used_k.add(ki)
+            pairs.append((gi, ki))
+
+    same = lambda g, k: g["tag"] and g["tag"] == k["tag"] and g["date"] == k["date"] and g["amount"] == k["amount"]
+    consume(lambda g, k: same(g, k) and g["text"] == k["text"])
+    consume(same)
+    chosen = dict(pairs)
+    rebuilt = {cat: [] for cat in list(CATS) + ["income", "transfer"]}
+    for gi, generated_row in enumerate(generated):
+        if gi in chosen:
+            kept_row = kept_rows[chosen[gi]]
+            dest = kept_row["cat"] if kept_row["cat"] in rebuilt else generated_row["cat"]
+            rebuilt[dest].append((generated_row["date"], generated_row["amount"], kept_row["text"]))
+        else:
+            rebuilt[generated_row["cat"]].append((generated_row["date"], generated_row["amount"], generated_row["text"]))
+    for ki, kept_row in enumerate(kept_rows):
+        if ki in used_k or kept_row["tag"] or not kept_row["text"] or kept_row["cat"] not in rebuilt:
+            continue
+        rebuilt[kept_row["cat"]].append((kept_row["date"], kept_row["amount"], kept_row["text"]))
+    for cat, rows in rebuilt.items():
+        if cat == "Opłaty cykliczne":
+            fixed = [row for row in rows if _tag(row[2]) == "stałe"]
+            rest = [row for row in rows if _tag(row[2]) != "stałe"]
+            def fixed_key(row):
+                for index, (amount, label) in enumerate(FIXED):
+                    if row[2] == f"{label} [stałe]" or row[1] == amount:
+                        return index
+                return len(FIXED)
+            fixed.sort(key=fixed_key)
+            rest.sort(key=lambda row: (row[0], row[2]))
+            fresh[cat] = fixed + rest
+        else:
+            rows.sort(key=lambda row: (row[0], row[2]))
+            fresh[cat] = rows
+
+
 def cmd_build(args):
     txs = json.loads(open(args.txs, encoding="utf-8").read())
     if not isinstance(txs, list) or not txs:
@@ -706,6 +914,8 @@ def cmd_build(args):
     trips = _load_trips(args.trips)
     budgets = json.loads(open(args.budgets, encoding="utf-8").read()) if args.budgets else None
     grouped = group(txs, trips)
+    if args.keep:
+        apply_kept(grouped, read_kept(args.keep))
     covered = args.covered or max(tx["date"] for tx in txs)
     when = args.updated or datetime.date.today().isoformat()
     log = json.loads(open(args.log, encoding="utf-8").read()) if args.log else []
@@ -720,6 +930,39 @@ def cmd_build(args):
     write_xlsx(grouped, args.out, args.note or "", budget=args.budget, budgets=budgets, log=log)
     counts = {key: sum(len(v) for name, v in bucket.items() if name in CATS) for key, bucket in grouped.items()}
     print(f"OK build {args.out} months {len(grouped)} through {covered} " + " ".join(f"{month_title(k)}:{counts[k]}" for k in sorted(counts)))
+
+
+def _write_shared_fixture(path, serial):
+    sheet = (
+        '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+        f'<worksheet xmlns="{NS}"><sheetData>'
+        '<row r="5"><c r="A5" t="inlineStr"><is><t>2026-10-02</t></is></c>'
+        '<c r="B5"><v>4</v></c><c r="C5" t="s"><v>0</v></c></row>'
+        f'<row r="6"><c r="G6"><v>{serial}</v></c><c r="H6"><v>10</v></c><c r="I6" t="s"><v>1</v></c></row>'
+        '</sheetData></worksheet>'
+    )
+    shared = (
+        '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+        f'<sst xmlns="{NS}" count="2" uniqueCount="2">'
+        '<si><t>sklep [mbank]</t></si><si><t>taxi [pko]</t></si></sst>'
+    )
+    workbook = (
+        '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+        '<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" '
+        'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">'
+        '<sheets><sheet name="Październik 2026" sheetId="1" r:id="rId1"/></sheets></workbook>'
+    )
+    rels = (
+        '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+        '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+        '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" '
+        'Target="worksheets/sheet1.xml"/></Relationships>'
+    )
+    with zipfile.ZipFile(path, "w") as zf:
+        zf.writestr("xl/worksheets/sheet1.xml", sheet)
+        zf.writestr("xl/sharedStrings.xml", shared)
+        zf.writestr("xl/workbook.xml", workbook)
+        zf.writestr("xl/_rels/workbook.xml.rels", rels)
 
 
 def selftest():
@@ -792,6 +1035,39 @@ def selftest():
     assert "Log" in book and "Pokryte do" in logged and "2026-11-07" in logged
     assert "Budżet miesiąca" not in manual_rows(path)
     assert "S mieszkanie czynsz" not in " ".join(manual_rows(path))
+    kept = read_kept(path)
+    assert any("żabka [mbank]" in row[2] for row in kept["2026-10"]["Produkty spożywcze"])
+    assert kept["2026-10"]["income"] == []
+    kept["2026-10"]["Produkty spożywcze"] = [
+        ("2026-10-02", 4.0, "sklep osiedlowy [mbank]") if "żabka" in row[2] else row
+        for row in kept["2026-10"]["Produkty spożywcze"]
+    ]
+    kept["2026-10"]["wydatki w podróży"] = [row for row in kept["2026-10"]["wydatki w podróży"] if "Cafe" not in row[2]]
+    kept["2026-10"]["Alkohol"].append(("2026-10-05", 83.60, "kolacja (Paris) [mbank]"))
+    kept["2026-10"]["Opłaty cykliczne"] = [row for row in kept["2026-10"]["Opłaty cykliczne"] if row[1] != 3900]
+    kept["2026-10"]["Reszta"].append(("2026-10-01", 3900, "czynsz mieszkania [stałe]"))
+    kept["2026-10"]["Reszta"].append(("2026-10-09", 12.0, "bilet do muzeum"))
+    rebuilt = group(sample, trips)
+    apply_kept(rebuilt, kept)
+    assert any(row[2] == "sklep osiedlowy [mbank]" for row in rebuilt["2026-10"]["Produkty spożywcze"])
+    assert all("Cafe" not in row[2] for row in rebuilt["2026-10"]["wydatki w podróży"])
+    assert any(row == ("2026-10-05", 83.60, "kolacja (Paris) [mbank]") for row in rebuilt["2026-10"]["Alkohol"])
+    assert any(row == ("2026-10-01", 3900.0, "czynsz mieszkania [stałe]") or row == ("2026-10-01", 3900, "czynsz mieszkania [stałe]") for row in rebuilt["2026-10"]["Reszta"])
+    assert all(row[1] != 3900 for row in rebuilt["2026-10"]["Opłaty cykliczne"])
+    assert any(row[2] == "bilet do muzeum" for row in rebuilt["2026-10"]["Reszta"])
+    path2 = os.path.join(tempfile.mkdtemp(), "kept.xlsx")
+    write_xlsx(rebuilt, path2, "PKO note", budget=9000)
+    again = group(sample, trips)
+    apply_kept(again, read_kept(path2))
+    assert any(row[2] == "kolacja (Paris) [mbank]" for row in again["2026-10"]["Alkohol"])
+    assert all("Cafe Test" not in row[2] for rows in again["2026-10"].values() for row in rows)
+    assert any(row[2] == "bilet do muzeum" for row in again["2026-10"]["Reszta"])
+    shared_path = os.path.join(tempfile.mkdtemp(), "shared.xlsx")
+    serial = (datetime.date(2026, 10, 3) - datetime.date(1899, 12, 30)).days
+    _write_shared_fixture(shared_path, serial)
+    shared_kept = read_kept(shared_path)
+    assert shared_kept["2026-10"]["Produkty spożywcze"] == [("2026-10-02", 4.0, "sklep [mbank]")]
+    assert shared_kept["2026-10"]["Transport"] == [("2026-10-03", 10.0, "taxi [pko]")]
     print("OK selftest")
 
 
@@ -810,6 +1086,7 @@ def build():
     cmd.add_argument("--source", default="mbank")
     cmd.add_argument("--log", default="")
     cmd.add_argument("--log-out", default="")
+    cmd.add_argument("--keep", default="", help="Previous workbook. A renamed row or a moved category is kept.")
     cmd.set_defaults(fn=cmd_build)
     manual = sub.add_parser("manual")
     manual.add_argument("--xlsx", required=True)

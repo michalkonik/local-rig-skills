@@ -12,7 +12,7 @@ description: Use when the user wants the budget Google Sheet updated from mBank 
 ## Rules
 1. Do not print account ids, full numbers, or tokens. Write the tx JSON under `~/.local/state/rig-skills/` and do not commit it.
 2. Categories stay the ten headers from `2025_budget.xlsx`. Do not add a column.
-3. A row whose description does not end in `[mbank]`, `[pko]`, or `[stałe]` is manual. Never delete it.
+3. A row whose description does not end in `[mbank]`, `[pko]`, or `[stałe]` is manual. Never delete it. A renamed description or a category the user moved stays where they put it. `--keep` matches the row on the date, the amount, and that ending tag. Do not drop the tag. Two rows with the same date, amount, and tag stay distinct only when one of them still has the generated description.
 4. Card repayments titled like `SPLATA KARTY` stay below the total. They are not spending.
 5. Cell B1 on each month tab is the budget, default 9000. The user may change it. `Zostało` is B1 minus spending. Read it back with `$B budgets` before a replace, and pass those values in `--budgets`.
 6. Grocery chains are labeled with the chain only (`żabka`, `biedronka`). Other rows keep the shop, person, or purpose.
@@ -24,9 +24,9 @@ description: Use when the user wants the budget Google Sheet updated from mBank 
 1. mBank: `/read-mbank-transactions` from the Log date `Pokryte do` through today. If there is no Log yet, start at the user's first day. Save `date, amount, title, counterparty, category, source: mbank` as JSON. No account id.
 2. `$P status`. If it prints `OK no session`, skip PKO and say so. If a session exists, add those txs with `source: pko`.
 3. Read the calendar from the first day of the range through today. Keep multi-day trips (a city, a flight, or the word wyjazd). Skip birthdays, concerts, and appointments in Kraków. Do not mark a trip longer than 14 days unless the user said to. Save a JSON list of `start`, `end`, and `name`.
-4. `$B budgets --xlsx OLD` when the sheet already exists. Read the `Log` tab. Then `$B build --txs JSON --trips TRIPS --budgets BUDGETS --log LOG --log-out LOG --covered YYYY-MM-DD --note "NOTE" --out /tmp/budzet.xlsx`.
+4. `$B budgets --xlsx OLD` when the sheet already exists. Read the `Log` tab. Download that sheet as xlsx first. Then `$B build --txs JSON --trips TRIPS --budgets BUDGETS --log LOG --log-out LOG --covered YYYY-MM-DD --note "NOTE" --keep OLD --out /tmp/budzet.xlsx`. `--keep` is required whenever the sheet already exists.
 5. First file: `$G upload --file /tmp/budzet.xlsx --name "Budżet 2026.xlsx" --as sheet --apply`. Save the id into `budget.json`.
-6. Later updates: `$G replace ID --file /tmp/budzet.xlsx --apply`. Before that, download the sheet as xlsx, copy manual descriptions back into the JSON, and keep each month's B1.
+6. Later updates: `$G replace ID --file /tmp/budzet.xlsx --apply`. The xlsx passed to `--keep` is the download from before the build. Do not put a user's description or category back to the generated one. Keep each month's B1.
 7. If the script prints `ERROR`, stop.
 
 ## Reply
@@ -49,7 +49,7 @@ A trip day is applied before these shop rules, so the same shop stays in `wydatk
 
 ## Gotchas
 - Empty rows under each category are for the user. The SUM line includes them.
-- Replacing the whole file drops manual rows and a changed B1 unless they were copied back in first. A Google Sheet download stores text in shared strings, so `budget.py manual` can report none. Read the description cells yourself before a replace.
+- Replacing the whole file without `--keep` drops a renamed bank row, a moved category, a manual row, and a changed B1. Pass the downloaded workbook to `--keep`. Read B1 with `$B budgets` as well. `budget.py manual` can report none on a Google Sheet download because the text is in shared strings. `--keep` reads those strings. Do not reconstruct a user's label by hand.
 - Each category is three columns: data, kwota, opis. The date is not repeated in the description.
 - A calendar trip moves that day's spend into `wydatki w podróży`, except subscriptions, therapy, donations, and Revolut top-ups. Grocery labels stay the chain name.
 - Rows tagged `[stałe]` are the housing lines. The builder adds them. Do not treat them as manual.
