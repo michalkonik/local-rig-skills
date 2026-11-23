@@ -1,6 +1,6 @@
 ---
 name: transcript-youtube-video
-description: Use when the user wants the transcript of a YouTube video saved ("transcribe this video", "get the subtitles") - Markdown with [mm:ss] timestamps from captions, or local Whisper when there are none. For key points use /select-meaningful-information-from-text. Input - URL or search phrase, language.
+description: Use when the user wants the transcript of a YouTube video saved ("transcribe this video", "get the subtitles") - Markdown with [mm:ss] timestamps from captions, or local Whisper when there are none. For a summary use /summarize-transcript. Input - URL or search phrase, language.
 ---
 # /transcript-youtube-video
 **Goal:** the full transcript saved as Markdown (title, channel, date, duration, URL, language, source; paragraphs
@@ -28,7 +28,7 @@ with [mm:ss] timestamps). **Input:** a URL or video name / search phrase, option
 ```
 Saved: <path>
 Source: captions (manual|auto) | whisper, language <xx>, <N> words
-Key points? /select-meaningful-information-from-text <path>
+Summary? /summarize-transcript <path>
 ```
 
 ## Gotchas

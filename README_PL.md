@@ -1,6 +1,6 @@
 # local-rig-skills
 
-Cztery skille dla lokalnych modeli: research w sieci ze źródłami, szukanie publicznych stron `.onion` przez Tor, transkrypcje YouTube i wyciąganie tego, co ważne, z długiego tekstu.
+Cztery skille dla lokalnych modeli: research w sieci ze źródłami, szukanie publicznych stron `.onion` przez Tor, transkrypcje YouTube i streszczenie transkrypcji, które zastępuje oglądanie.
 
 Skill to folder z `SKILL.md` (kiedy użyć, kroki, kształt odpowiedzi) i skryptem, który robi mechaniczną robotę. Model ma iść za plikiem, a nie wymyślać procedury.
 
@@ -13,7 +13,7 @@ W tym repozytorium nie ma kont, sekretów ani konfiguracji jednej maszyny. Domy�
 | `/find-in-internet` | Odpowiedź ze źródłami z publicznej sieci. Kilka zapytań, przeczytane strony, rozbieżności zostają. |
 | `/find-in-dark-web` | Publiczne wyniki `.onion` przez lokalne proxy Tor. Tylko legalny research. |
 | `/transcript-youtube-video` | Pełna transkrypcja w Markdown ze znacznikami `[mm:ss]`. Najpierw napisy, Whisper gdy ich nie ma. |
-| `/select-meaningful-information-from-text` | Sedno długiego tekstu: TL;DR, punkty, co zrobić, co sprawdzić, co pominąć. |
+| `/summarize-transcript` | Masz transkrypcję i chcesz treść rozmowy: teza, punkty z czasem, co zrobić, co sprawdzić, co pominąć. |
 
 Indeks: [INDEX.md](INDEX.md). Format nowego skilla: [reference/skill-format.md](reference/skill-format.md).
 

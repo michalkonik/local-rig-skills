@@ -1,6 +1,6 @@
 # local-rig-skills
 
-Four agent skills for work that local models do badly when you only prompt them: web research with citations, onion-site research through Tor, YouTube transcripts, and pulling the useful points out of a long text.
+Four agent skills for work that local models do badly when you only prompt them: web research with citations, onion-site research through Tor, YouTube transcripts, and a summary of a transcript that replaces watching it.
 
 A skill is a folder with a `SKILL.md` (when to use it, the steps, the reply shape) and a script that does the mechanical part. The model follows the file. It does not have to invent the procedure.
 
@@ -13,7 +13,7 @@ Nothing in this repo is an account, a secret, or one person's machine. The comma
 | `/find-in-internet` | You want a sourced answer from the public web. Several queries, the best pages read, disagreements kept. |
 | `/find-in-dark-web` | You want public `.onion` results through a local Tor proxy. Legitimate research only. Refuses illegal content. |
 | `/transcript-youtube-video` | You want a full transcript as Markdown with `[mm:ss]` timestamps. Captions first, local Whisper if there are none. |
-| `/select-meaningful-information-from-text` | You want the point of a long text or transcript: TL;DR, ranked points, what to do, what to verify, what to skip. |
+| `/summarize-transcript` | You have a transcript and want the talk instead of the wording: thesis, timestamped points, what to do, what to check, what to skip. |
 
 Generated index: [INDEX.md](INDEX.md). House format for a new skill: [reference/skill-format.md](reference/skill-format.md).
 
@@ -64,7 +64,7 @@ Ask normally ("what changed in llama.cpp this month?") or start the message with
 
 ```text
 /transcript-youtube-video https://www.youtube.com/watch?v=...
-/select-meaningful-information-from-text ~/Documents/transcripts/that-video.md
+/summarize-transcript ~/Documents/transcripts/that-video.md
 ```
 
 The model is supposed to run the script in the skill, then answer in the shape at the bottom of the file. Check the "Before you finish" list if a reply has no URLs, no timestamps, or a pasted transcript that should have been a file.
