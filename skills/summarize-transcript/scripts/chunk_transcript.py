@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
-"""Split a long text into overlapping chunks for reading in passes; print a compact index.
+"""Split a transcript into overlapping chunks and print a compact index.
 
-  chunk_text.py INPUT [--size 12000] [--overlap 600]     INPUT = a .md/.txt file, or "-" for stdin
+  chunk_transcript.py INPUT [--size 12000] [--overlap 600]     INPUT = a .md/.txt file, or "-" for stdin
 
-Cuts at headings, then paragraph breaks, then sentence ends - never mid-sentence when avoidable. Writes
-<work>/c01.md ... (each starts with a "<!-- chunk cNN chars a-b [mm:ss-mm:ss] -->" line) and prints one line per
-chunk: id, size, timestamp range (from [mm:ss] / [h:mm:ss] markers, e.g. transcripts), first words.
-Work dir: <input>.chunks/ next to the input (stdin: ~/Documents/notes/stdin-<time>.chunks/). Also prints the
-suggested output path for the notes. Inputs under --size are not split: read the file directly.
+Cuts just before a [mm:ss] cue when it can, else at a heading, a blank line, or a sentence end.
+Writes <work>/c01.md ... and prints one line per chunk: id, size, timestamp range, first words.
+Work dir: <input>.chunks/ next to the input (stdin: ~/Documents/notes/stdin-<time>.chunks/).
+Prints the summary path (<input>.summary.md) and whether the file has timestamps.
+Inputs under --size are not split: read the file directly.
 """
 import argparse, datetime, pathlib, re, sys
 
@@ -15,12 +15,12 @@ TS = re.compile(r"\[(\d{1,2}:)?\d{1,2}:\d{2}\]")
 
 
 def cut_point(text, start, size):
-    """Best end for a chunk starting at `start`: last heading, else blank line, else sentence end in the window."""
+    """Best end for a chunk starting at `start`: before a timestamp, else a heading, blank line, or sentence."""
     end = start + size
     if end >= len(text):
         return len(text)
     window = text[start + size // 2:end]
-    for pat in (r"\n#{1,6} ", r"\n\s*\n", r"[.!?…][\"')\]]?\s"):
+    for pat in (r".(?=\[\d{1,2}:\d{2}(?::\d{2})?\])", r"\n#{1,6} ", r"\n\s*\n", r"[.!?…][\"')\]]?\s"):
         hits = [m.end() if pat.startswith("[") else m.start() + 1 for m in re.finditer(pat, window)]
         if hits:
             return start + size // 2 + hits[-1]
@@ -42,9 +42,11 @@ def main():
         src = pathlib.Path(a.input).expanduser()
         text = src.read_text(errors="ignore")
         base = src.with_suffix("")
-    notes = f"{base}.notes.md"
+    summary = f"{base}.summary.md"
     words = len(text.split())
-    print(f"input {len(text)} chars, {words} words, ~{len(text) // 4} tokens; notes -> {notes}")
+    stamps = TS.findall(text)
+    kind = "timestamped transcript" if len(stamps) >= 3 else "not a timestamped transcript"
+    print(f"input {len(text)} chars, {words} words, {len(stamps)} timestamps, {kind}; summary -> {summary}")
     if len(text) <= a.size:
         print("short enough: read the whole input directly, no chunks written")
         return
