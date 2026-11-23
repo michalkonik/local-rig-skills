@@ -122,7 +122,9 @@ def sync_prompts_menu(t, api, skills):
         p = existing.get(s["name"])
         try:
             if p:
-                if p.get("content") != form["content"] or p.get("name") != form["name"]:
+                old_tags = set(p.get("tags") or []) | set(((p.get("meta") or {}).get("tags") or []))
+                if (p.get("content") != form["content"] or p.get("name") != form["name"]
+                        or old_tags != {TAG}):
                     api(t, "POST", f"/api/v1/prompts/id/{p['id']}/update", form)
                     print(f"Open WebUI: updated /{s['name']} in the prompt menu")
             else:
@@ -148,6 +150,10 @@ if __name__ == "__main__":
         sys.exit(0)
     write_index(skills)
     print(f"wrote {REPO / 'INDEX.md'}")
+    if "--index-only" in sys.argv:
+        sys.exit(0)
     sync_webui(skills)
+    if "--no-prompts" in sys.argv:
+        sys.exit(0)
     r = subprocess.run([sys.executable, str(pathlib.Path.home() / ".config/llama-swap/tools/sync_prompts.py")])
     sys.exit(r.returncode)

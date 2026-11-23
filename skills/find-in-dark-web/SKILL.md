@@ -6,7 +6,7 @@ description: Use when the user wants public onion services searched anonymously 
 **Goal:** relevant public .onion results for a legitimate research query. **Input:** a search query.
 **Output:** a short list of results in chat.
 `S=~/Desktop/github_repos/local-rig-skills/skills/find-in-dark-web/scripts`
-(the two scripts are symlinks to `~/Desktop/github_repos/local-rig-tools/tor-search/` - that repo is the source)
+The scripts are in that folder. They need a local Tor SOCKS proxy at `127.0.0.1:9050`.
 
 ## Rules
 1. Legitimate privacy and security research only: news sites' onion mirrors, privacy tools, public research,
