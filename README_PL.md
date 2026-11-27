@@ -12,8 +12,8 @@ W tym repozytorium nie ma kont, sekretów ani konfiguracji jednej maszyny. Domy�
 |---|---|
 | `/find-in-internet` | Odpowiedź ze źródłami z publicznej sieci. Kilka zapytań, przeczytane strony, rozbieżności zostają. |
 | `/find-in-dark-web` | Publiczne wyniki `.onion` przez lokalne proxy Tor. Tylko legalny research. |
-| `/transcript-youtube-video` | Pełna transkrypcja w Markdown ze znacznikami `[mm:ss]`. Najpierw napisy, Whisper gdy ich nie ma. |
-| `/summarize-transcript` | Masz transkrypcję i chcesz treść rozmowy: teza, punkty z czasem, co zrobić, co sprawdzić, co pominąć. |
+| `/transcript-youtube-video` | Pełna transkrypcja w Markdown ze znacznikami `[mm:ss]`. Najpierw napisy, Whisper gdy ich nie ma. Film do zachowania trafia do repo videos-transcriptions obok tego klona. |
+| `/summarize-transcript` | Masz transkrypcję i chcesz treść rozmowy. Streszczenie filmu z biblioteki idzie za README tamtego repo. |
 
 Indeks: [INDEX.md](INDEX.md). Format nowego skilla: [reference/skill-format.md](reference/skill-format.md).
 

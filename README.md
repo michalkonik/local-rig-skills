@@ -12,8 +12,8 @@ Nothing in this repo is an account, a secret, or one person's machine. The comma
 |---|---|
 | `/find-in-internet` | You want a sourced answer from the public web. Several queries, the best pages read, disagreements kept. |
 | `/find-in-dark-web` | You want public `.onion` results through a local Tor proxy. Legitimate research only. Refuses illegal content. |
-| `/transcript-youtube-video` | You want a full transcript as Markdown with `[mm:ss]` timestamps. Captions first, local Whisper if there are none. |
-| `/summarize-transcript` | You have a transcript and want the talk instead of the wording: thesis, timestamped points, what to do, what to check, what to skip. |
+| `/transcript-youtube-video` | You want a full transcript as Markdown with `[mm:ss]` timestamps. Captions first, local Whisper if there are none. A video you keep goes in the videos-transcriptions repo next to this clone. |
+| `/summarize-transcript` | You have a transcript and want the talk instead of the wording. A kept video's summary follows that repo's README. |
 
 Generated index: [INDEX.md](INDEX.md). House format for a new skill: [reference/skill-format.md](reference/skill-format.md).
 
