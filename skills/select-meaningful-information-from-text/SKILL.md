@@ -15,6 +15,7 @@ path to a .txt/.md file (often from /transcript-youtube-video). **Output:** a no
 3. Keep the reasoning ("because") and keep numbers exact.
 4. Write in the input's language unless the user asks otherwise.
 5. A doubtful proper noun stays as heard. Check the transcript's `## Description` before guessing a cleaner name. If it is still unclear, mark it `(unverified)`.
+6. You decide what is important after reading the whole text. Do not pick lines with a script that searches for words such as buy, sell, or DCA. `check_summary.py` only checks that the sections are present.
 
 ## Steps
 1. `python3 $C <file>` (pasted text: `python3 $C - <<'EOF' ... EOF`) -> prints size, the notes path
@@ -50,6 +51,6 @@ Notes: <notes path or summary.md>
 ```
 
 ## Before you finish
-- [ ] Every chunk was read.
+- [ ] Every chunk was read, and the summary is that reading, not a keyword extract.
 - [ ] No fact is missing from the input; doubtful claims are marked.
 - [ ] A kept video's `check_summary.py` printed OK, and the `.chunks/` folder is in the trash.

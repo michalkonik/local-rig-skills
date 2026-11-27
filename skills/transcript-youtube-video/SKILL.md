@@ -12,6 +12,7 @@ description: Use when the user wants a YouTube transcript saved ("transcribe thi
 2. Reply with the path and stats. The transcript stays in the file.
 3. Upgrading yt-dlp needs the user's OK, and only to a release at least 2 weeks old (change `YTDLP_PIN`).
 4. Do not commit or push the library unless the user asks.
+5. The summary is a full read via `/select-meaningful-information-from-text`. Do not extract it with a keyword script.
 
 ## Steps
 1. Name, not URL? `python3 $T --pick-only "<phrase>"` prints title | channel | date | duration | URL and which captions exist. Show that line. If it is clearly the wrong video, refine the phrase or ask.
@@ -46,3 +47,4 @@ Key points? /select-meaningful-information-from-text <path>
 - [ ] The one-off file is in `~/Documents/transcripts/`, or the kept video is only `transcript.md` from `--library`.
 - [ ] The reply has path, source, language, and word count.
 - [ ] The transcript text is not pasted into the chat.
+- [ ] Any summary was written by reading the transcript, not by searching it for trade words.
