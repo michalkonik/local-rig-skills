@@ -1,6 +1,6 @@
 ---
 name: transcript-youtube-video
-description: Use when the user wants a YouTube transcript saved ("transcribe this video", "get the subtitles") - Markdown with [mm:ss] from captions, or local Whisper when none exist. A kept video goes in repo videos-transcriptions. Next /select-meaningful-information-from-text. Input - URL or name, language.
+description: Use when the user wants a YouTube transcript saved ("transcribe this video", "get the subtitles") - Markdown with [mm:ss] from captions, or local Whisper when none exist. A kept video goes in the videos-transcriptions repo. Summary: /summarize-transcript. Input - URL or name, language.
 ---
 # /transcript-youtube-video
 **Goal:** the full transcript as Markdown (title block, `[mm:ss]` paragraphs, uploader description kept separate).
@@ -12,7 +12,7 @@ description: Use when the user wants a YouTube transcript saved ("transcribe thi
 2. Reply with the path and stats. The transcript stays in the file.
 3. Upgrading yt-dlp needs the user's OK, and only to a release at least 2 weeks old (change `YTDLP_PIN`).
 4. Do not commit or push the library unless the user asks.
-5. The summary is a full read via `/select-meaningful-information-from-text`. Do not extract it with a keyword script.
+5. The summary is a full read via `/summarize-transcript`. Do not extract it with a keyword script.
 
 ## Steps
 1. Name, not URL? `python3 $T --pick-only "<phrase>"` prints title | channel | date | duration | URL and which captions exist. Show that line. If it is clearly the wrong video, refine the phrase or ask.
@@ -22,14 +22,14 @@ description: Use when the user wants a YouTube transcript saved ("transcribe thi
    - `--lang xx`: matching subtitles, else auto-captions in xx, else Whisper in that language.
    - Whisper takes ~1/6 of the video length (84 s audio = 13 s). Over ~10 min of video with Whisper, run in the background: `~/Desktop/github_repos/local-rig-skills/bin/bg yt python3 $T "<URL>" --whisper`, poll `bin/bg yt`. Add `--library` on that command when the video is kept.
    - `--library` writes `channels/<slug>/<date>--<id>--<title>/transcript.md` and creates `CHANNEL.md` for a new channel. Paths and slugs are the script's. The summary shape is that repo's `README.md`. If the clone is missing, the script prints the `gh repo clone` command. Run it and retry.
-3. For a kept video, run `/select-meaningful-information-from-text` on that `transcript.md`.
+3. For a kept video, run `/summarize-transcript` on that `transcript.md`.
 4. Reply with the template below.
 
 ## Reply
 ```
 Saved: <path>
 Source: captions (manual|auto) | whisper, language <xx>, <N> words
-Key points? /select-meaningful-information-from-text <path>
+Summary? /summarize-transcript <path>
 ```
 
 ## Gotchas

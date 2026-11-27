@@ -1,179 +1,78 @@
 # local-rig-skills
 
-Skills for the local AI models on my rig (mkoniu-B850-AI-TOP, 4x Radeon AI PRO R9700). A skill is a folder with a
-`SKILL.md` (when to use it + a step-by-step procedure) and optional scripts. Every model served by llama-swap can use
-them, in both chat UIs, and so does the OpenClaw agent Pedro. *Polska wersja: [README_PL.md](README_PL.md).*
+Four agent skills for work that local models do badly when you only prompt them: web research with citations, onion-site research through Tor, YouTube transcripts, and a summary of a transcript that replaces watching it.
 
-**Rig and models**
+A skill is a folder with a `SKILL.md` (when to use it, the steps, the reply shape) and a script that does the mechanical part. The model follows the file. It does not have to invent the procedure.
 
-| Skill | What it does |
+Nothing in this repo is an account, a secret, or one person's machine. The commands inside the skills use `~/Desktop/github_repos/local-rig-skills`. Clone it there, or change that path in the four `SKILL.md` files if you put the repo somewhere else.
+
+## Skills
+
+| Skill | Use it when |
 |---|---|
-| `/download-llm <model or need>` | finds the right repo and quant on Hugging Face, checks disk space, downloads in the background, then offers `/add-new-model-to-config` |
-| `/add-new-model-to-config <model> [engine/config] [role]` | adds the model to llama-swap (llama.cpp ROCm/Vulkan, vLLM, radiance), tests it and tunes it for speed without losing quality |
-| `/inspect-current-config-of-model <model>` | audits a model's setup, researches online for better settings or files, proposes changes and applies the approved ones via `/update-config-of-model` |
-| `/update-config-of-model <model> <changes>` | applies config changes one at a time: backup, smoke test, benchmark before/after, rollback what does not help |
-| `/update-monitoring <change>` | changes Netdata alerts, the GPU collector or e-mail alerting with staged files, one approved sudo command, and an undo |
-| `/update-openclaw-config <change>` | changes OpenClaw (Pedro): models, sub-agents, plugins, skills, agents, channels, approvals, tools, MCP or a custom capability - finds the exact config path, backs up, dry-runs a JSON5 patch, tests with a real agent turn, keeps an undo |
-| `/apply-change-on-local-machine <change>` | any other change to the machine: plan, destructive-command check, backup, apply, verify, journal |
-| `/load-rig-context` | gives a fresh agent the map of the rig (paths, services, models, tools, rules, which doc to read) plus a live-state script; short, meant to be loaded often |
+| `/find-in-internet` | You want a sourced answer from the public web. Several queries, the best pages read, disagreements kept. |
+| `/find-in-dark-web` | You want public `.onion` results through a local Tor proxy. Legitimate research only. Refuses illegal content. |
+| `/transcript-youtube-video` | You want a full transcript as Markdown with `[mm:ss]` timestamps. Captions first, local Whisper if there are none. A video you keep goes in the videos-transcriptions repo next to this clone. |
+| `/summarize-transcript` | You have a transcript and want the talk instead of the wording. A kept video's summary follows that repo's README. |
 
-**Research and reading**
+Generated index: [INDEX.md](INDEX.md). House format for a new skill: [reference/skill-format.md](reference/skill-format.md).
 
-| Skill | What it does |
-|---|---|
-| `/find-in-internet <question>` | web research with cited sources |
-| `/find-in-dark-web <query>` | onion search through the local Tor proxy (legitimate research only) |
-| `/transcript-youtube-video <URL or name>` | full transcript of a YouTube video as .md with timestamps - captions first, local Whisper (Speaches) when there are none. One-off files in ~/Documents/transcripts/; kept videos in the private videos-transcriptions repo |
-| `/select-meaningful-information-from-text <text or file>` | the key points of a long text or transcript: TL;DR, ranked points with evidence and timestamps, takeaways, claims to verify, skip/skim map. A kept YouTube video is classed investment, technical, or earning and saved as summary.md |
+## Install
 
-**Content: X and YouTube (workspace `~/content/`)**
-
-| Skill | What it does |
-|---|---|
-| `/content-voice` | builds your voice profile from your own writing (measured numbers + quoted examples); drafts are checked against it |
-| `/content-ideas` | ideas from your rig's real activity + niche trends (HF trending, r/LocalLLaMA, HN, llama.cpp releases), scored, each with the command that proves it |
-| `/write-x-post <idea or URL>` | one English X draft from a content idea, in your voice, with real numbers; you post it by hand. Not the two-account day loop |
-| `/x-operate` | two X accounts: morning brief, audit, who to talk to, follow or unfollow, and drafts. You post by hand |
-| `/x-voice` | rewrite a draft so it sounds like you: English on @local_agents, Polish on @youroldpalhorse |
-| `/make-youtube-video <idea>` | real terminal captures -> narrated slides, charts, code (local Kokoro TTS), captions, chapters, thumbnail A/B, titles - all on the rig |
-| `/make-youtube-short <finding>` | 30-55 s vertical video with burned captions from one real result |
-| `/publish-youtube-video <slug>` | upload via the YouTube Data API as private/scheduled with thumbnail, captions, AI-disclosure flag |
-| `/content-weekly-review` | your X and YouTube analytics exports -> what worked, one experiment, next week's plan |
-
-**Income (search and triage; the final act stays yours)**
-
-| Skill | What it does |
-|---|---|
-| `/claim-money-owed` | EU261 flight compensation and other claims: amount, deadline, ready letter (EN/PL) you send |
-| `/track-bank-promotions` | Polish bank promotions: new/ended, conditions checklist with dates |
-| `/find-freelance-gigs` | public freelance listings scored against your profile, proposal drafts you submit by hand |
-| `/scan-bailiff-auctions` | official bailiff e-auctions: discount vs appraisal, deposit and dates, a shortlist you decide on |
-| `/income-ledger` | the shared income ledger (SQLite): attempts, hours, costs, revenue, kill-check |
-| `/income-weekly-review` | weekly page from the ledger: numbers per stream, keep/kill verdicts per the course's criteria, upcoming deadlines, your decisions |
-| `/deal-hunter <status, deals, show, explain, books, start, stop>` | query and control the Deal Hunter agent (undervalued-hardware deals, tiers, net breakdown, costs); it only finds deals, never buys or contacts sellers |
-
-**Notes (Joplin). OneNote is retired; the OneNote skills are removed.**
-
-| Skill | What it does |
-|---|---|
-| `/joplin-list` | notebook tree, or the notes in one notebook |
-| `/joplin-read` | search notes and print one note as text |
-| `/joplin-write` | create a notebook or note, or append text; sends only with `--apply` |
-| `/joplin-actions` | action to-dos sorted by deadline; sends only with `--apply` |
-
-The script is `bin/joplin.py`. Do not read or write OneNote.
-
-**OneDrive (Graph token, scope `Files.ReadWrite`)**
-
-| Skill | What it does |
-|---|---|
-| `/drive-list` | list one folder or search the drive |
-| `/drive-read` | print a small text file, or the size when it is not text |
-| `/drive-write` | upload, create a folder, or delete one item; sends only with `--apply` |
-
-Script: `bin/drive.py`. Token: Bitwarden item `onenote`, field `access_token` (`bw-secret onenote#access_token`). The item name is only the token store. A token copied before consent cannot call the drive.
-
-**Google Drive (account `michal.konik.praca@gmail.com`, OAuth scope `drive`)**
-
-| Skill | What it does |
-|---|---|
-| `/gdrive-list` | list one My Drive folder, or search by name |
-| `/gdrive-read` | preview a Doc or small text file, or download (Sheets as xlsx, Docs as docx) |
-| `/gdrive-write` | upload, replace a Doc/Sheet, write cells, create a folder, or trash one item; sends only with `--apply` |
-| `/gdrive-sheets` | create a spreadsheet, add, rename, or remove a tab, append rows, or send any other Sheets batch; sends only with `--apply` |
-
-Script: `bin/gdrive.py`. Token: `~/Documents/keep/gmail-tokens.json`. Not the OneDrive script. Cell writes and tab changes need the Sheets API enabled on the OAuth project. `sheet-batch` sends any `batchUpdate` request, so a missing named command is not a reason to refuse.
-
-**PKO (Enable Banking, read only)**
-
-| Skill | What it does |
-|---|---|
-| `/pko-balance` | balances and the credit-card limit for the consented PKO accounts |
-| `/pko-transactions` | transactions for an inclusive date range |
-| `/pko-card-timeline` | days until card interest only when the bank feed includes a due date |
-
-Script: `bin/pko.py`. Secrets: Bitwarden item `enablebanking-pko` (`bw-secret`, never in git). mBank stays on `/read-mbank-balance`. The control-panel account link activates the app; balances need one API consent session.
-
-**Gate.io (read only)**
-
-| Skill | What it does |
-|---|---|
-| `/gate-balance` | spot balances, available and locked, for the whitelisted key |
-| `/gate-transactions` | spot ledger history, and personal trades when a pair is named |
-| `/gate-withdrawals` | withdrawal and deposit history; it does not send a withdrawal |
-
-Script: `bin/gate.py`. Secrets: Bitwarden item `gateio`, fields `key` and `secret` (`bw-secret`, never in git). No orders or transfers.
-
-**MEXC (spot, read only)**
-
-| Skill | What it does |
-|---|---|
-| `/mexc-balance` | spot balances, free and locked |
-| `/mexc-transactions` | spot trades for one symbol and a date range |
-| `/mexc-withdrawals` | withdrawal and deposit history; it does not send a withdrawal |
-
-Script: `bin/mexc.py`. Secrets: Bitwarden item `mexc`, fields `key` and `secret` (`bw-secret`, never in git). No orders or transfers.
-
-**OKX (read only)**
-
-| Skill | What it does |
-|---|---|
-| `/okx-balance` | trading-account and funding-account balances |
-| `/okx-transactions` | account bills, or spot fills when an instrument is named |
-| `/okx-withdrawals` | withdrawal and deposit history; does not send a withdrawal |
-
-Script: `bin/okx.py`. Host: `https://eea.okx.com`. `www.okx.com` returns `50119` for this account. Secrets: Bitwarden item `okx`, fields `key`, `secret`, and `passphrase` (`bw-secret`, never in git). No orders and no withdrawals are sent.
-
-**KSeF (Firehorse IT Consulting, read and download)**
-
-| Skill | What it does |
-|---|---|
-| `/ksef-invoices` | list or download e-invoice XML; `sales` are issued invoices, `costs` are received invoices; does not issue an invoice |
-
-Script: `bin/ksef.py`. Secrets: Bitwarden item `ksef`, fields `token` and `nip` (`bw-secret`, never in git). Files already on disk are skipped. Output defaults to `~/Documents/ksef/6891205697`.
-
-**Budget sheet**
-
-| Skill | What it does |
-|---|---|
-| `/manage-budget-file` | fills Google Sheet `Budżet 2026` from mBank and PKO, one tab per month, ten categories with date, amount, and description; yellow B1 is the editable monthly budget; Log tab says how far the bank read got |
-
-Script: `bin/budget.py`. The sheet id is in `~/.local/state/rig-skills/budget.json`, not in git.
-Full generated list: [INDEX.md](INDEX.md).
-
-## How the models get the skills
-- **Open WebUI** (`https://192.168.0.39:3443` or `http://192.168.0.39:3000`): every skill is registered as a native
-  Open WebUI Skill. Models with native tool calling see the list and load a skill with their `view_skill` tool when
-  it fits. To pick one yourself, type `/` in the chat box: every skill is in the menu with autocomplete
-  (`/dow` -> `/download-llm`); choose it and type your request after it. `$` lists the skills as well.
-- **llama.cpp chat UI** (llama-swap, `http://192.168.0.39:8080`): the catalog is part of each model's system prompt
-  (written by `~/.config/llama-swap/tools/sync_prompts.py`); a message starting with `/skill-name` makes the model
-  read that `SKILL.md` with its file tool and follow it.
-- **OpenClaw (Pedro)** loads this `skills/` folder directly (`skills.load.extraDirs`, since 29 Oct 2026).
-- **Scripts** run on the rig through the models' shell tools. Root actions always go through the sudo approval
-  page (you approve each command with your password; the models never see it).
-
-## Layout
+```bash
+git clone https://github.com/michalkonik/local-rig-skills.git ~/Desktop/github_repos/local-rig-skills
 ```
-skills/<name>/SKILL.md        instructions (front matter: name, description); <name>/scripts/ skill-only scripts
-bin/                          shared tools: ls_entry.py (safe llama-swap edits), model_facts.py (GGUF/safetensors
-                              facts + GPU plan), smoke.py (load/answer/tool/vision test), bench.py (speed before/after),
-                              model_report.py (one-page model audit), bg (background jobs), sync_skills.py (publish)
-lib/                          rig.py (paths, llama-swap, resources, backups, journal), hf.py (Hugging Face API),
-                              content.py (content workspace, X length, AI-tell lint), ledger.py (income ledger), income.py (polite fetching, NBP rates)
-reference/skill-format.md     the house format for skills on local models (read before writing one)
-reference/rig-map.md          full rig tables behind /load-rig-context
-reference/serving-playbook.md rules learned on this rig for engines, flags, limits and measuring
-reference/openclaw-config.md  OpenClaw config paths, recipes, custom capabilities, docs map (/update-openclaw-config)
+
+Python 3 is enough for the research and notes skills. `/find-in-dark-web` needs Tor listening on `127.0.0.1:9050` (`tor`, or `tor@default`). `/transcript-youtube-video` needs `ffmpeg` and creates its own `yt-dlp` venv on first use. Whisper is optional: an OpenAI-compatible server at `http://127.0.0.1:8001/v1` (Speaches does this). Captions work without it.
+
+### OpenClaw
+
+Add the skills directory to `skills.load.extraDirs` in `~/.openclaw/openclaw.json`:
+
+```json
+"extraDirs": [
+  "/home/you/Desktop/github_repos/local-rig-skills/skills"
+]
 ```
-State written by the scripts (not in git): `~/.local/state/rig-skills/` - `journal.log` (every change with its undo),
-`backups/`, `bench/`, `downloads/`, `jobs/`, `monitoring/`.
 
-## Add or change a skill
-1. Create `skills/<name>/SKILL.md` from the template in `reference/skill-format.md`: work in a script, body under
-   6k characters (hard cap 10k), description under 300 characters starting "Use when...". Test it once through
-   Pedro or Open WebUI with a real request.
-2. `python3 bin/sync_skills.py` - validates, regenerates INDEX.md, updates Open WebUI and all system prompts.
-3. Commit and push.
+Restart is usually unnecessary. Check with `openclaw skills list`.
 
-Docs of the whole setup (private): `~/Desktop/github_repos/llm-private-education` (chapter 05 = skills).
+### Hermes
+
+In `~/.hermes/config.yaml`, under `skills:`:
+
+```yaml
+external_dirs:
+  - ~/Desktop/github_repos/local-rig-skills/skills
+```
+
+External directories are read-only. Hermes will not write back into this repo.
+
+### Open WebUI and llama.cpp
+
+If you already run this project's sync tools (Open WebUI on port 3000 and llama-swap):
+
+```bash
+python3 bin/sync_skills.py
+```
+
+That validates every `SKILL.md`, refreshes `INDEX.md`, and publishes one native skill plus a `/skill-name` prompt-menu entry. Without those tools, point the model at `skills/<name>/SKILL.md` yourself. A message that starts with `/find-in-internet` is the whole interface.
+
+## Use one
+
+Ask normally ("what changed in llama.cpp this month?") or start the message with the command:
+
+```text
+/transcript-youtube-video https://www.youtube.com/watch?v=...
+/summarize-transcript ~/Documents/transcripts/that-video.md
+```
+
+The model is supposed to run the script in the skill, then answer in the shape at the bottom of the file. Check the "Before you finish" list if a reply has no URLs, no timestamps, or a pasted transcript that should have been a file.
+
+## Add a skill
+
+Copy the shape in [reference/skill-format.md](reference/skill-format.md). One folder, one `SKILL.md`, scripts beside it. Front matter is a single `name` and a single-line `description` that starts with "Use when". Keep the file under 10k characters. Then `python3 bin/sync_skills.py --check`.
+
+## License
+
+[MIT](LICENSE).
