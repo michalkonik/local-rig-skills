@@ -1,28 +1,28 @@
 ---
 name: transcript-youtube-video
-description: Use when the user wants the transcript of a YouTube video saved ("transcribe this video", "get the subtitles") - Markdown with [mm:ss] timestamps from captions, or local Whisper when there are none. For key points use /select-meaningful-information-from-text. Input - URL or search phrase, language.
+description: Use when the user wants a YouTube transcript saved ("transcribe this video", "get the subtitles") - Markdown with [mm:ss] from captions, or local Whisper when none exist. A kept video goes in repo videos-transcriptions. Next /select-meaningful-information-from-text. Input - URL or name, language.
 ---
 # /transcript-youtube-video
-**Goal:** the full transcript saved as Markdown (title, channel, date, duration, URL, language, source; paragraphs
-with [mm:ss] timestamps). **Input:** a URL or video name / search phrase, optionally a language ("in Polish") or
-"use Whisper". **Output:** a file in `~/Documents/transcripts/` and a short reply.
+**Goal:** the full transcript as Markdown (title block, `[mm:ss]` paragraphs, uploader description kept separate).
+**Input:** a URL or video name, optionally a language ("in Polish") or "use Whisper". **Output:** one file and a short reply.
 `T=~/Desktop/github_repos/local-rig-skills/skills/transcript-youtube-video/scripts/yt_transcript.py`
 
 ## Rules
-1. Personal use only: transcripts stay in `~/Documents/transcripts/`, never in a git repo.
-2. Reply with the path and stats; the transcript itself stays in the file.
+1. Personal use only. A one-off transcript goes to `~/Documents/transcripts/` and is not committed. A video the user wants kept goes only in the private repo `michalkonik/videos-transcriptions`, via `--library`. No other git repo.
+2. Reply with the path and stats. The transcript stays in the file.
 3. Upgrading yt-dlp needs the user's OK, and only to a release at least 2 weeks old (change `YTDLP_PIN`).
+4. Do not commit or push the library unless the user asks.
 
 ## Steps
-1. Name, not URL? `python3 $T --pick-only "<phrase>"` - prints title | channel | date | duration | URL and which
-   captions exist. Show that line; if it is clearly not the video they meant, refine the phrase or ask.
-2. Transcribe: `python3 $T "<URL or phrase>" [--lang pl] [--whisper]`
-   - Captions first (uploader subtitles in the original language, then YouTube auto-captions; rolling duplicates
-     removed). No captions, or `--whisper` -> audio goes to Speaches Whisper.
-   - `--lang xx`: matching subtitles, else auto-captions in xx, else Whisper with that language.
-   - Whisper takes ~1/6 of the video length (84 s audio = 13 s). Over ~10 min of video with Whisper, run in the
-     background: `~/Desktop/github_repos/local-rig-skills/bin/bg yt python3 $T "<URL>" --whisper`, poll `bin/bg yt`.
-3. Reply with the template below.
+1. Name, not URL? `python3 $T --pick-only "<phrase>"` prints title | channel | date | duration | URL and which captions exist. Show that line. If it is clearly the wrong video, refine the phrase or ask.
+2. Kept video (save it for later, summarise it for action, or they name the library): `python3 $T "<URL>" --library [--lang pl] [--whisper]`
+   One-off: `python3 $T "<URL or phrase>" [--lang pl] [--whisper]`
+   - Captions first (uploader subtitles in the original language, then YouTube auto-captions; rolling duplicates removed). No captions, or `--whisper`, sends the audio to Speaches Whisper.
+   - `--lang xx`: matching subtitles, else auto-captions in xx, else Whisper in that language.
+   - Whisper takes ~1/6 of the video length (84 s audio = 13 s). Over ~10 min of video with Whisper, run in the background: `~/Desktop/github_repos/local-rig-skills/bin/bg yt python3 $T "<URL>" --whisper`, poll `bin/bg yt`. Add `--library` on that command when the video is kept.
+   - `--library` writes `channels/<slug>/<date>--<id>--<title>/transcript.md` and creates `CHANNEL.md` for a new channel. Paths and slugs are the script's. The summary shape is that repo's `README.md`. If the clone is missing, the script prints the `gh repo clone` command. Run it and retry.
+3. For a kept video, run `/select-meaningful-information-from-text` on that `transcript.md`.
+4. Reply with the template below.
 
 ## Reply
 ```
@@ -43,5 +43,6 @@ Key points? /select-meaningful-information-from-text <path>
   only as a last resort; without ffmpeg the audio goes to Speaches in one piece.
 
 ## Before you finish
-- [ ] The file is in `~/Documents/transcripts/` and the reply has path, source, language, word count.
+- [ ] The one-off file is in `~/Documents/transcripts/`, or the kept video is only `transcript.md` from `--library`.
+- [ ] The reply has path, source, language, and word count.
 - [ ] The transcript text is not pasted into the chat.

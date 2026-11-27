@@ -1,15 +1,19 @@
 #!/usr/bin/env python3
 """Full transcript of a YouTube video as Markdown: captions first, local Whisper (Speaches) when there are none.
 
-  yt_transcript.py "<URL or search phrase>" [--lang xx] [--whisper] [--out DIR] [--chunk-min 10] [--pick-only]
+  yt_transcript.py "<URL or search phrase>" [--lang xx] [--whisper] [--out DIR] [--basename NAME] [--library] [--chunk-min 10] [--pick-only]
 
   --lang xx      wanted language (default: the video's original language)
   --whisper      skip captions, transcribe the audio with Speaches (also the automatic fallback)
   --pick-only    only resolve the video and print title/channel (check a search pick before the long work)
   --out DIR      default ~/Documents/transcripts
+  --basename     file name inside --out (default <upload-date>-<slug>.md)
+  --library      write transcript.md into ~/Desktop/github_repos/videos-transcriptions, grouped by channel
 
-Writes <DIR>/<upload-date>-<slug>.md and prints a short summary (path, source, language, words). yt-dlp lives in
-its own venv (~/.local/share/rig-skills/venvs/yt-dlp, pinned); it is created on first use.
+Writes the Markdown file and prints a short summary (path, source, language, words). The file has the title
+block (including video id and channel id), timestamped paragraphs, and a Description section with the
+uploader's text. yt-dlp lives in its own venv (~/.local/share/rig-skills/venvs/yt-dlp, pinned); it is created
+on first use.
 """
 import argparse, datetime, html, json, pathlib, re, shutil, subprocess, sys, tempfile, time, urllib.request, uuid
 
@@ -19,6 +23,7 @@ YTDLP = VENV / "bin/yt-dlp"
 SPEACHES = "http://127.0.0.1:8001/v1"
 WHISPER = "deepdml/faster-whisper-large-v3-turbo-ct2"
 PW_FFMPEG = pathlib.Path.home() / ".cache/ms-playwright/ffmpeg-1011/ffmpeg-linux"
+LIBRARY = pathlib.Path.home() / "Desktop/github_repos/videos-transcriptions"
 
 
 def log(msg):
@@ -165,7 +170,39 @@ def whisper(info, lang, work, chunk_min):
 
 
 def slug(s):
-    return re.sub(r"[^a-z0-9]+", "-", s.lower()).strip("-")[:60] or "video"
+    raw = re.sub(r"[^a-z0-9]+", "-", (s or "").lower()).strip("-")
+    if len(raw) <= 60:
+        return raw or "video"
+    cut = raw[:60]
+    return (cut.rsplit("-", 1)[0] if "-" in cut else cut) or "video"
+
+
+def library_video_dir(info, date):
+    """channels/<slug>/<date>--<id>--<title-slug>/ — reuse the folder whose CHANNEL.md has this channel id."""
+    if not (LIBRARY / ".git").is_dir():
+        sys.exit(f"video library missing. Clone it, then retry:\n"
+                 f"gh repo clone michalkonik/videos-transcriptions {LIBRARY}")
+    cid = info.get("channel_id") or ""
+    cname = info.get("channel") or info.get("uploader") or "channel"
+    dest = None
+    root = LIBRARY / "channels"
+    if root.is_dir() and cid:
+        for ch in root.glob("*/CHANNEL.md"):
+            if f"Channel ID: {cid}" in ch.read_text(errors="ignore"):
+                dest = ch.parent
+                break
+    if dest is None:
+        dest = root / slug(cname)
+        marker = dest / "CHANNEL.md"
+        if marker.exists() and cid and f"Channel ID: {cid}" not in marker.read_text(errors="ignore"):
+            sys.exit(f"channel folder {dest} belongs to a different channel id")
+        dest.mkdir(parents=True, exist_ok=True)
+        if not marker.exists():
+            marker.write_text(f"# {cname}\n\n- YouTube: {info.get('channel_url')}\n"
+                              f"- Channel ID: {cid}\n- Slug: {dest.name}\n")
+    video = dest / f"{date}--{info.get('id')}--{slug(info.get('title') or 'video')}"
+    video.mkdir(parents=True, exist_ok=True)
+    return video
 
 
 def main():
@@ -175,6 +212,9 @@ def main():
     ap.add_argument("--whisper", action="store_true")
     ap.add_argument("--pick-only", action="store_true")
     ap.add_argument("--out", default=str(pathlib.Path.home() / "Documents/transcripts"))
+    ap.add_argument("--basename", help="file name inside --out; default <upload-date>-<slug>.md")
+    ap.add_argument("--library", action="store_true",
+                    help="write transcript.md into ~/Desktop/github_repos/videos-transcriptions, grouped by channel")
     ap.add_argument("--chunk-min", type=int, default=10)
     a = ap.parse_args()
     ensure_ytdlp()
@@ -208,16 +248,30 @@ def main():
     paras = paragraphs(segs)
     d = info.get("upload_date") or datetime.date.today().strftime("%Y%m%d")
     date = f"{d[:4]}-{d[4:6]}-{d[6:]}"
-    out = pathlib.Path(a.out).expanduser()
-    out.mkdir(parents=True, exist_ok=True)
-    path = out / f"{date}-{slug(info.get('title', 'video'))}.md"
+    if a.library:
+        path = library_video_dir(info, date) / "transcript.md"
+    else:
+        out = pathlib.Path(a.out).expanduser()
+        out.mkdir(parents=True, exist_ok=True)
+        name = a.basename or f"{date}-{slug(info.get('title', 'video'))}.md"
+        if name != pathlib.Path(name).name or not name.endswith(".md"):
+            sys.exit("basename must be a single .md file name")
+        path = out / name
     head = (f"# {info.get('title')}\n\n"
-            f"- Channel: {info.get('channel') or info.get('uploader')}\n- Published: {date}\n- Duration: {ts(dur)}\n"
+            f"- Channel: {info.get('channel') or info.get('uploader')}\n"
+            f"- Channel URL: {info.get('channel_url')}\n- Channel ID: {info.get('channel_id')}\n"
+            f"- Video ID: {info.get('id')}\n- Published: {date}\n- Duration: {ts(dur)}\n"
             f"- URL: {info.get('webpage_url')}\n- Language: {lang}\n- Source: {source}\n"
             f"- Transcribed: {datetime.datetime.now():%Y-%m-%d %H:%M}\n\n## Transcript\n\n")
-    path.write_text(head + "\n\n".join(f"[{ts(t)}] {p}" for t, p in paras) + "\n")
+    text = head + "\n\n".join(f"[{ts(t)}] {p}" for t, p in paras) + "\n"
+    desc = (info.get("description") or "").strip()
+    if desc:
+        text += f"\n## Description\n\n{desc}\n"
+    path.write_text(text)
     words = sum(len(p.split()) for _, p in paras)
     print(f"saved {path}\nsource {source}, language {lang}, {words} words, {len(paras)} paragraphs, {time.time() - t0:.0f} s")
+    if a.library:
+        print(f"summary {path.parent / 'summary.md'}\nshape {LIBRARY / 'README.md'}")
 
 
 if __name__ == "__main__":

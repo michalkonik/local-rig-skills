@@ -23,8 +23,8 @@ them, in both chat UIs, and so does the OpenClaw agent Pedro. *Polska wersja: [R
 |---|---|
 | `/find-in-internet <question>` | web research with cited sources |
 | `/find-in-dark-web <query>` | onion search through the local Tor proxy (legitimate research only) |
-| `/transcript-youtube-video <URL or name>` | full transcript of a YouTube video as .md with timestamps - captions first, local Whisper (Speaches) when there are none |
-| `/select-meaningful-information-from-text <text or file>` | the key points of a long text or transcript: TL;DR, ranked points with evidence and timestamps, takeaways, claims to verify, skip/skim map |
+| `/transcript-youtube-video <URL or name>` | full transcript of a YouTube video as .md with timestamps - captions first, local Whisper (Speaches) when there are none. One-off files in ~/Documents/transcripts/; kept videos in the private videos-transcriptions repo |
+| `/select-meaningful-information-from-text <text or file>` | the key points of a long text or transcript: TL;DR, ranked points with evidence and timestamps, takeaways, claims to verify, skip/skim map. A kept YouTube video is classed investment, technical, or earning and saved as summary.md |
 
 **Content: X and YouTube (workspace `~/content/`)**
 

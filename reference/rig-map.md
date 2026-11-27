@@ -14,6 +14,7 @@ order; GPU 0 drives the monitor). GPU 4 = iGPU (2 GB). `~/models` disk 1.8 TB.
 |---|---|
 | `$R/llm-private-education` (private) | THE rig docs: `en/00-START-HERE.md` (one page), `en/08-CONFIG-MAP.md` (every config file + apply command + logs), `pl/` = Polish, `configs/` snapshots, `tools/snapshot-configs.py` |
 | `$R/local-rig-skills` (private) | skills: `skills/*/SKILL.md`, `bin/` (bg, ls_entry.py, smoke.py, bench.py, model_report.py, model_facts.py, sync_skills.py), `lib/rig.py`, `reference/`; catalog `INDEX.md` |
+| `$R/videos-transcriptions` (private, github.com/michalkonik/videos-transcriptions) | YouTube transcripts and actionable summaries, one folder per channel. Layout and summary shapes: that repo's README. Written by /transcript-youtube-video `--library` and /select-meaningful-information-from-text |
 | `$R/llm-education` (private, github.com/michalkonik) | courses on local LLMs/agents - generic, nothing rig- or person-specific |
 | `$R/local-llm-perf-bench` (public), `local-llm-bench-results`, `local-llm-quality-bench` (private, github.com/michalkonik) | speed bench harness, published results, PL/EN quality bench |
 | `$R/radeon-r9700-rocm-notes` (private, github.com/michalkonik) | RDNA4/ROCm notes, generic monitoring copy |

@@ -23,8 +23,8 @@ każdy model serwowany przez llama-swap, w obu interfejsach czatu, a także agen
 |---|---|
 | `/find-in-internet <pytanie>` | research w sieci ze źródłami |
 | `/find-in-dark-web <zapytanie>` | wyszukiwanie w sieci onion przez lokalne proxy Tor (tylko legalny research) |
-| `/transcript-youtube-video <URL albo nazwa>` | pełna transkrypcja filmu z YouTube jako .md ze znacznikami czasu - najpierw napisy, bez nich lokalny Whisper (Speaches) |
-| `/select-meaningful-information-from-text <tekst albo plik>` | najważniejsze punkty długiego tekstu lub transkrypcji: TL;DR, punkty według wagi z dowodami i czasem, wnioski do zastosowania, tezy do sprawdzenia, mapa co obejrzeć/pominąć |
+| `/transcript-youtube-video <URL albo nazwa>` | pełna transkrypcja filmu z YouTube jako .md ze znacznikami czasu - najpierw napisy, bez nich lokalny Whisper (Speaches). Jednorazowo w ~/Documents/transcripts/; filmy do zachowania w prywatnym repo videos-transcriptions |
+| `/select-meaningful-information-from-text <tekst albo plik>` | najważniejsze punkty długiego tekstu lub transkrypcji: TL;DR, punkty według wagi z dowodami i czasem, wnioski do zastosowania, tezy do sprawdzenia, mapa co obejrzeć/pominąć. Film z biblioteki dostaje rodzaj (inwestycje, techniczny albo zarabianie) i summary.md obok transkrypcji |
 
 **Treści: X i YouTube (przestrzeń `~/content/`)**
 
